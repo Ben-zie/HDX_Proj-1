@@ -1,0 +1,58 @@
+---
+title: "HDX_proj-1_main"
+author: "Benjamin DAUTRIF"
+date: "2023-10-26"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Install HDX package from Github :
+# install.packages("remotes")
+remotes::install_gitlab("dickoa/rhdx")
+
+# Loading packages :
+library("rhdx")
+```
+
+List of web sites around HDX :
+
+https://gitlab.com/dickoa/rhdx
+
+```{r conf, echo=FALSE}
+set_rhdx_config(
+  hdx_site = "prod",
+#  hdx_key = NULL,
+  read_only = TRUE,
+#  hdx_config = NULL,
+#  hdx_config_file = NULL,
+#  configuration = NULL
+)
+
+# Verify configuration : 
+get_rhdx_config()
+
+# -> Result : 
+# <HDX Configuration> 
+#   HDX site: prod
+#   HDX site url: https://data.humdata.org
+#   HDX API key: 
+```
+
+```{r search, echo=FALSE}
+# Search module in HDX web-site database :
+HDX_SEARCH <- function (){
+  
+  clefs_recherche = readline("Entrez les mots de recherche separes uniquement par un espace) : \n")
+  taille_liste = as.integer(readline("Entrez le nombre de resultats souhaite pour affichage : \n"))
+  ds_liste = search_datasets(clefs_recherche,taille_liste)
+  print(ds_liste)
+  ds = as.integer(readline("Selection du dataset : \n"))
+  ressources_liste = get_resources(ds_liste[[ds]])
+  print(ressources_liste)
+  res = as.integer(readline("Selection de la ressource : \n"))
+  return(read_resource(ressources_liste[[res]]))
+}
+
+```

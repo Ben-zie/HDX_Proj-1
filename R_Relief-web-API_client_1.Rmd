@@ -1,0 +1,82 @@
+--- 
+title: "R_http-API_client_1"
+author: "Benjamin DAUTRIF"
+date: "2023-10-27"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Packages installation 
+# install.packages("httr2")
+# install.packages("rjson")
+
+library("httr2")
+
+# Load the package required to read JSON files.
+library("rjson")
+```
+
+
+```{r PARAMs}
+var_endpoint = 1
+value = "gaza"
+field = "body"
+```
+
+```{r REQUEST}
+req_call <- function(var_endpoint){
+endpoints = c(
+  "reports",
+  "disasters",
+  "countries",
+  "jobs",
+  "training",
+  "sources",
+  "blog",
+  "book",
+  "references"
+)
+req = request("https://api.reliefweb.int/v1/")
+req = req_url_path_append(req, endpoints[var_endpoint])
+return(req)
+}
+```
+
+```{r pressure, echo=FALSE}
+param_call <- function(req,field,value){
+
+  # Add "?" for parameters compartment delimitation :
+  temp = capture.output(cat(
+    req$url, '?query[value]=', sep = ""
+    ))
+  temp = capture.output(cat(
+    temp,paste(field, ":", value, collapse = "&query[value]=", sep = ""),sep = ""
+    ))
+  
+  req = request(temp)
+  resp = req_perform(req)
+  res = resp_body_json(resp)
+  
+  return(res)
+}
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+res_summary <- function(res, field, lim = 10){
+# - input : { Resultat after JSon extract [res] ; The field to print in final list [field]}
+# - output : a list of fields from objects extracted by [res]
+
+eval(parse(text = paste("
+for(i in seq(1,limite)){
+print(res$data[i][[1]]$fields$",field,")}",sep="")))
+}
+```
+
+```{r CASE}
+req = req_call(1)
+res = param_call(req = req, field = field, value = value)
+res_summary(res,field = "title")
+```
