@@ -15,15 +15,15 @@ https://cran.r-project.org/web/packages/httr2/
 ## URL of the reliefWeb API :
 https://apidoc.rwlabs.org/
 
-```{r setup, include=FALSE}
+```{r setup, include=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 
 # Packages installation 
 # install.packages("httr2")
 # install.packages("rjson")
 
+# Load the package required to http protocole management.
 library("httr2")
-
 # Load the package required to read JSON files.
 library("rjson")
 ```
@@ -34,32 +34,36 @@ An *"endpoint"* must be chosen to define the type of documents to search in. *"p
 
 For more information on parameters, see [API documentation]("https://apidoc.rwlabs.org/parameters")
 
-The client is composed of 3 functions :    
+## The client is composed of 3 functions :    
 
-- first one calls for the API url and defines the *"endpoint"* :
+**1st** one calls for the API url and defines the *"endpoint"* :
 
-```{r REQUEST}
+```{r REQUEST, echo=TRUE}
 req_call <- function(var_endpoint){
-endpoints = c(
-  "reports",
-  "disasters",
-  "countries",
-  "jobs",
-  "training",
-  "sources",
-  "blog",
-  "book",
-  "references"
-)
-req = request("https://api.reliefweb.int/v1/")
-req = req_url_path_append(req, endpoints[var_endpoint])
-return(req)
+  endpoints = c(
+    "reports",
+    "disasters",
+    "countries",
+    "jobs",
+    "training",
+    "sources",
+    "blog",
+    "book",
+    "references"
+  )
+  req = request("https://api.reliefweb.int/v1/")
+  req = req_url_path_append(req, endpoints[var_endpoint])
+  return(req)
 }
 ```
 
-It returns a request that can be enriched with *"parameters"* with the 2nd function :
+It returns a request that can be enriched with *"parameters"* with the **2nd** function :
 
-```{r pressure, echo=FALSE}
+Beware of parentheses in multi-arguments calls for URL management sake.
+
+```{r pressure, echo=TRUE}
+
+# First version of the function is valuable for signle argument parameter :
 param_call <- function(req,field,value){
 
   # Add "?" for parameters compartment delimitation :
@@ -76,13 +80,44 @@ param_call <- function(req,field,value){
   
   return(res)
 }
+
+# Second version of the function covers multi-arguments call and operators :
+param_call_2 <- function(req,field=NULL,value=NULL,operator=NULL){
+
+  values = c()
+  for(i in seq(1,length(value))){
+    if(!is.null(field[i])){
+      values = append(values, capture.output(cat("query[fields][]=",field[i],sep = "")))
+    }
+    if(!is.null(value[i])){
+      values = append(values, capture.output(cat("query[value]=",value[i],sep = "")))
+    }
+    if(!is.null(operator[i])){
+      values = append(values, capture.output(cat("query[operator]=",operator[i],sep = "")))
+    }
+  }
+  # Add "?" for parameters compartment delimitation :
+  Kick = req$url
+  temp = capture.output(
+    cat(values,sep = "&")
+  )
+  temp = capture.output(cat(Kick,temp,sep="?"))
+  
+  print(temp)
+  
+  req = request(temp)
+  resp = req_perform(req)
+  # res = resp_body_json(resp)
+  
+  return(resp)
+}
 ```
 
 For more informations on *"parameters"* for this API, you may want to loog the online documentation. 
 
-The 3rd function *summarize* the results in a sized list : 
+The **3rd** function *summarize* the results in a sized list : 
 
-```{r}
+```{r SUMMARY,echo=TRUE}
 res_summary <- function(res, field, lim = 10){
 # - input : { Resultat after JSon extract [res] ; The field to print in final list [field]}
 # - output : a list of fields from objects extracted by [res]
@@ -95,14 +130,19 @@ print(res$data[i][[1]]$fields$",field,")}",sep="")))
 
 Example :
 
-```{r PARAMs}
+```{r PARAMs, echo=TRUE}
 var_endpoint = 1
-value = "gaza"
-field = "body"
+value = "(gaza)(flood)"
+field = "title"
+operator = "OR"
 ```
 
-```{r CASE}
+```{r CASE, echo=TRUE}
 req = req_call(1)
 res = param_call(req = req, field = field, value = value)
 res_summary(res,field = "title")
+
+
+
+param_call_2(req,field,value,operator)
 ```
