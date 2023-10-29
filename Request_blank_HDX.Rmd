@@ -46,3 +46,31 @@ doc_df_ <-
   get_resource(....) %>% ## get the first resource
   read_resource(simplify_json = TRUE, download_folder = tempdir()) ## the file will be downloaded in a temporary directory
 ```
+
+```{r DISASTERS, echo=TRUE}
+# Simple request to get the list [Disasters_names] :
+
+x=request("https://api.reliefweb.int/v1/references/disaster-types/")
+y=req_perform(x)
+w_1=resp_body_json(y)
+
+disaster_list = c()
+for(i in seq(1,length(w_1$data))){
+  disaster_list=append(disaster_list, pluck(w_1$data,i,3,2))
+}
+disaster_list
+```
+
+```{r ORGANISATIONS, echo=TRUE}
+# Simple request to get the list [Disasters_names] :
+
+x=request("https://api.reliefweb.int/v1/references/organization-types/")
+y=req_perform(x)
+w_2=resp_body_json(y)
+
+organisation_list = c()
+for(i in seq(1,length(w_2$data))){
+  organisation_list=append(organisation_list, pluck(w_2$data,i,3,2))
+}
+organisation_list
+```
