@@ -11,14 +11,15 @@ knitr::opts_chunk$set(echo = TRUE)
 # Install HDX package from Github :
 # install.packages("remotes")
 remotes::install_gitlab("dickoa/rhdx")
-
+install.packages("RCurl")
 # Loading packages :
 library("rhdx")
+library("RCurl")
 ```
 
 # Summary : 
 
-This script insalls from the *"configuration shunk"* the *"rhdx"* package. All interogations of the HDX database relies on it. 
+This script installs from the *"configuration shunk"* the *"rhdx"* package. All interogations of the HDX database relies on it. 
 
 For more informations, see :    
 https://gitlab.com/dickoa/rhdx
@@ -70,7 +71,18 @@ HDX_SEARCH <- function (){
   print(ressources_liste)
   # Expose a third prompt for ressouce selection :
   res = as.integer(readline("Selection de la ressource : \n"))
-
-  return(read_resource(ressources_liste[[res]]))
+  
+  return(res)
 }
+
+# Direct pull of a dataset with <HDX Dataset>
+pull_HDX <- function(ID){
+  tmp = pull_dataset(identifier = ID) %>%
+    get_resource(1) %>%
+    read_resource()
+  return(tmp)
+}
+
+res = HDX_SEARCH()
+ressource = read_resource(ressources_liste[[res]])
 ```
