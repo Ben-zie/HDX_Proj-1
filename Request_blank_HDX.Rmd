@@ -1,0 +1,48 @@
+---
+title: "Commande set for RHDX"
+author: "Benjamin DAUTRIF"
+date: "2023-10-29"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library("rhdx")
+library("tidyverse")
+
+set_rhdx_config(hdx_site = "prod")
+# get_rhdx_config()
+## <HDX Configuration>
+##   HDX site: prod
+##   HDX site url: https://data.humdata.org/
+##   HDX API key:
+```
+
+```{r SEARCH,echo=TRUE}
+# Search line for Step by Step :
+search_datasets("................",rows = 10)%>%pluck(7)%>%get_resources()%>%pluck(4)%>%read_resource()
+```
+
+
+```{r PULL, echo=TRUE}
+# Pull-data :
+x = pull_dataset("..................") %>%
+         get_resource(1) %>%
+         read_resource()
+```
+
+```{r RESSOURCES, echo=TRUE}
+# Ressources listing :
+get_resources(x)
+
+# Ressource reading :
+read_resource(x)
+```
+```{r JSON, echo=TRUE}
+# Caneva de requete HDX :
+doc_df_ <-
+  search_datasets("......................", rows = ....) %>%
+  pluck(....) %>%
+  get_resource(....) %>% ## get the first resource
+  read_resource(simplify_json = TRUE, download_folder = tempdir()) ## the file will be downloaded in a temporary directory
+```
