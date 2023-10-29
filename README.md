@@ -20,5 +20,5 @@ https://hdx-python-api.readthedocs.io/en/latest/
 
 
 # RelifWeb :
-## **The relif-web API online documentation** :
+## **The relief-web API online documentation** :
 https://apidoc.rwlabs.org/
