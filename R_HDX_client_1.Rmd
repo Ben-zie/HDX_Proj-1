@@ -5,7 +5,7 @@ date: "2023-10-26"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 
 # Install HDX package from Github :
@@ -16,11 +16,14 @@ remotes::install_gitlab("dickoa/rhdx")
 library("rhdx")
 ```
 
-List of web sites around HDX :
+# Summary : 
 
+This script insalls from the *"configuration shunk"* the *"rhdx"* package. All interogations of the HDX database relies on it. 
+
+For more informations, see :    
 https://gitlab.com/dickoa/rhdx
 
-```{r conf, echo=FALSE}
+```{r conf, echo=TRUE}
 set_rhdx_config(
   hdx_site = "prod",
 #  hdx_key = NULL,
@@ -29,30 +32,45 @@ set_rhdx_config(
 #  hdx_config_file = NULL,
 #  configuration = NULL
 )
-
-# Verify configuration : 
-get_rhdx_config()
-
-# -> Result : 
-# <HDX Configuration> 
-#   HDX site: prod
-#   HDX site url: https://data.humdata.org
-#   HDX API key: 
 ```
 
-```{r search, echo=FALSE}
-# Search module in HDX web-site database :
+Verifying configuration by : 
+
+```{r , echo=TRUE}
+  get_rhdx_config()
+```
+
+With result beeing : 
+* <HDX Configuration> 
+   HDX site: prod
+   HDX site url: https://data.humdata.org
+   HDX API key: *
+
+Then a simple (but evolutiv) function to call on HDX-database, searching for *"key-word"* and specifying a *"limit"* for result-list. 
+
+```{r SEARCH MODULE, echo=TRUE}
+
 HDX_SEARCH <- function (){
-  
+  # function to :
+  # Returns a RESSOURCE 
+  #
+  # - expose prompt for research-key-word (CHAR)
+  # - a prompt for numbers of results to get (INT)
   clefs_recherche = readline("Entrez les mots de recherche separes uniquement par un espace) : \n")
   taille_liste = as.integer(readline("Entrez le nombre de resultats souhaite pour affichage : \n"))
-  ds_liste = search_datasets(clefs_recherche,taille_liste)
+  # Launch request on HDX-database :
+  ds_liste = search_datasets(clefs_recherche, taille_liste)
+  # Print results list :
   print(ds_liste)
+  # Expose a second prompt selection for dataset IN the selection :
   ds = as.integer(readline("Selection du dataset : \n"))
+  # Extract ressources from dataset :
   ressources_liste = get_resources(ds_liste[[ds]])
+  # Print ressources list :
   print(ressources_liste)
+  # Expose a third prompt for ressouce selection :
   res = as.integer(readline("Selection de la ressource : \n"))
+
   return(read_resource(ressources_liste[[res]]))
 }
-
 ```
