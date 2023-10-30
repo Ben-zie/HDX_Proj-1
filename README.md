@@ -18,6 +18,8 @@ https://dickoa.gitlab.io/rhdx/index.html
 *Main documentation*     
 https://hdx-python-api.readthedocs.io/en/latest/
 
+## HLX connector :
+https://proxy.hxlstandard.org/data/source
 
 # RelifWeb :
 ## **The relief-web API online documentation** :
