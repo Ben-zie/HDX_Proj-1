@@ -5,6 +5,9 @@ By Benjamin DAUTRIF
 Start date : 10/26/2023  
 
 # HDX :
+## **HXL**       
+https://hxlstandard.org/
+
 ##  **The HDX "ressources for developpers" page**    
 https://data.humdata.org/faqs/devs
 
