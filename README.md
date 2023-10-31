@@ -4,25 +4,25 @@
 By Benjamin DAUTRIF    
 Start date : 10/26/2023  
 
-# HDX :
-## **HXL**       
-https://hxlstandard.org/
+# Humanitarian Data eXchange (HDX) :
+## **Humaniratrian eXchange Langage (HXL)**       
+[*API*](https://hxlstandard.org/)
 
-##  **The HDX "ressources for developpers" page**    
+### **HDX ressources for developpers**    
 https://data.humdata.org/faqs/devs
 
-## **RHDX : R client package for HDX-API** :    
+### HLX connector :
+[*Client interface*](https://proxy.hxlstandard.org/data/source)
+
+## **R client package for HDX-API : RHDX** :    
 [*Source code*](https://gitlab.com/dickoa/rhdx/)       
 [*Quick tutorial*](https://dickoa.gitlab.io/rhdx/index.html)    
 
-## **Python client package for HDX-API** :     
+## **Python client package for HDX** :     
 [*Main documentation*](https://hdx-python-api.readthedocs.io/en/latest/)     
 
-## HLX connector :
-[*Client interface*](https://proxy.hxlstandard.org/data/source)
-
 # RelifWeb :
-## **The relief-web API online documentation**
+### **The relief-web API online documentation**
 [*API*](https://apidoc.rwlabs.org/)
 
 ____________________________________________
