@@ -30,5 +30,5 @@ https://apidoc.rwlabs.org/
 
 ____________________________________________
 
-This project relies on following R-packages :
+This project relies on following R-packages :      
 [**dplyr**](https://dplyr.tidyverse.org/index.html)
