@@ -11,22 +11,19 @@ https://hxlstandard.org/
 ##  **The HDX "ressources for developpers" page**    
 https://data.humdata.org/faqs/devs
 
-## **R client package for HDX-API** :    
-*Source code*    
-https://gitlab.com/dickoa/rhdx/     
-*Quick tutorial*    
-https://dickoa.gitlab.io/rhdx/index.html
+## **RHDX : R client package for HDX-API** :    
+[*Source code*](https://gitlab.com/dickoa/rhdx/)       
+[*Quick tutorial*](https://dickoa.gitlab.io/rhdx/index.html)    
 
 ## **Python client package for HDX-API** :     
-*Main documentation*     
-https://hdx-python-api.readthedocs.io/en/latest/
+[*Main documentation*](https://hdx-python-api.readthedocs.io/en/latest/)     
 
 ## HLX connector :
-https://proxy.hxlstandard.org/data/source
+[*Client interface*](https://proxy.hxlstandard.org/data/source)
 
 # RelifWeb :
-## **The relief-web API online documentation** :
-https://apidoc.rwlabs.org/
+## **The relief-web API online documentation**
+[*API*](https://apidoc.rwlabs.org/)
 
 ____________________________________________
 
