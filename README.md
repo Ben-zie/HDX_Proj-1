@@ -28,4 +28,4 @@ https://data.humdata.org/faqs/devs
 ____________________________________________
 
 This project relies on following R-packages :      
-[**dplyr**](https://dplyr.tidyverse.org/index.html)
+[**dplyr**](https://dplyr.tidyverse.org/index.html) and [Tidyverse](https://www.tidyverse.org/)
