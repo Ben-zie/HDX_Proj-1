@@ -27,3 +27,8 @@ https://proxy.hxlstandard.org/data/source
 # RelifWeb :
 ## **The relief-web API online documentation** :
 https://apidoc.rwlabs.org/
+
+____________________________________________
+
+This project relies on following R-packages :
+[**dplyr**](https://dplyr.tidyverse.org/index.html)
