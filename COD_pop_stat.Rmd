@@ -27,7 +27,7 @@ irq_admpop_adm0_2021 <-
 # LIVEHOOD = ["RURAL" / "URBAN"]
 #_______________________________________________________________________________
 # Variables declaration : 
-dts =irq_admpop_adm0_2021
+dts =mex
 
 gender = c("F","M")
 livehood = c("RURAL","URBAN")
@@ -77,6 +77,11 @@ for(i in seq(1,2)){
           beside = TRUE,
           main = paste("Age pyramide = ",livehood[i]," : F Vs M ; iraq"))
 }
+
+```
+
+
+```{r LIVEHOOD, echo=TRUE}
 # Comparing LIVEHOODs for each GENDER :
 G=1
 for(i in c(1,3)){
@@ -88,4 +93,34 @@ for(i in c(1,3)){
   G=G+1
 }
 #_______________________________________________________________________________
+
+genders <- c("F","M","T")
+token_grid = mex%>%select(starts_with("F"))%>%names()%>%str_sub(start=2)
+
+Y = lapply(genders, function(x){
+  y <- mex%>%select(starts_with(x))
+  token = names(y)%>%str_sub(start=2)
+  z = sum(token==token_grid)
+  if(z==length(y)){
+    return(y)
+    }else{
+    print("Formats de donnees incompaltibes entre les categories")
+  }
+})
+
+Y= data.frame(Y)
+token_sort=c(mex$ADM2_EN)
+for(i in seq(1,length(token_grid))){
+  temp = select(Y, ends_with(token_grid[i]))
+  token_sort = append(token_sort,temp)
+}
+
+temp_1=list()
+for(i in seq(1,3)){
+  append(temp_1, names(y[[1]])%>%str_sub(start = 2))
+}
+
+lapply(x,function(X){
+  cbind(dts_list, select(mex,contains(X)))
+})
 ```
