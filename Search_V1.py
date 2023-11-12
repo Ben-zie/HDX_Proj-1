@@ -32,22 +32,91 @@ datasets = Dataset.search_in_hdx("WHO", rows=1000)
 # Stock "results" in a dataframe :
 results = pd.DataFrame(datasets)
 
+# Search being completed, several variables are available in results, which are accessible 
+# as columns of the "results dataframe" :
+# archived                              bool
+# batch                               object
+# caveats                             object
+# cod_level                           object
+# creator_user_id                     object
+# customviz                           object
+# data_update_frequency               object
+# dataseries_name                     object
+# dataset_date                        object
+# dataset_preview                     object
+# dataset_source                      object
+# due_date                            object
+# groups                              object
+# has_geodata                           bool
+# has_quickcharts                       bool
+# has_showcases                         bool
+# id                                  object
+# indicator                           object
+# is_requestdata_type                   bool
+# isopen                                bool
+# last_modified                       object
+# license_id                          object
+# license_other                       object
+# license_title                       object
+# license_url                         object
+# maintainer                          object
+# metadata_created                    object
+# metadata_modified                   object
+# methodology                         object
+# methodology_other                   object
+# name                                object
+# notes                               object
+# num_resources                        int64
+# num_tags                             int64
+# organization                        object
+# overdue_date                        object
+# owner_org                           object
+# package_creator                     object
+# pageviews_last_14_days               int64
+# private                               bool
+# qa_checklist                        object
+# qa_completed                          bool
+# quality                             object
+# relationships_as_object             object
+# relationships_as_subject            object
+# review_date                         object
+# solr_additions                      object
+# state                               object
+# subnational                         object
+# tags                                object
+# title                               object
+# total_res_downloads                  int64
+# type                                object
+# updated_by_script                   object
+# url                                 object
+# version                             object
+# date_var                    datetime64[ns]
+
+
 #%%
-# SORTING BY DATE MODULE
-# Columns of 'results' are :
-# ['archived', 'batch', 'caveats', 'cod_level', 'creator_user_id',
-#       'customviz', 'data_update_frequency', 'dataseries_name', 'dataset_date',
-#       'dataset_preview', 'dataset_source', 'due_date', 'groups',
-#       'has_geodata', 'has_quickcharts', 'has_showcases', 'id',
-#       'is_requestdata_type', 'isopen', 'last_modified', 'license_id',
-#       'license_other', 'license_title', 'license_url', 'maintainer',
-#       'metadata_created', 'metadata_modified', 'methodology',
-#       'methodology_other', 'name', 'notes', 'num_resources', 'num_tags',
-#       'organization', 'overdue_date', 'owner_org', 'package_creator',
-#       'pageviews_last_14_days', 'private', 'qa_checklist', 'qa_completed',
-#       'relationships_as_object', 'relationships_as_subject', 'review_date',
-#       'solr_additions', 'state', 'subnational', 'tags', 'title',
-#       'total_res_downloads', 'type', 'updated_by_script', 'url', 'version']
+# SORT BY KEYWORD
+def search_keyword (x, field = 'title', key = None) :
+    """
+    
+    Parameters
+    ----------
+    x : dataframe
+        original dataframe containing results of research on the HDX database.
+    field : str, optional
+        Filed in which look after the keyword ; default is 'title' (see above list of fields for more informations).
+    key : str
+        Keyword to look after ; default is None.
+
+    Returns
+    -------
+    dat : dataframe
+        List of items matching the research.
+    """
+
+    dat = x[x[field].str.contains(key, case = False)]
+    return dat
+#%%
+# SORT BY DATE
 
 # Using package "re" for regular expressions :
 
@@ -77,7 +146,7 @@ def sort_by_date (x) :
     return x
 
 #%%
-# SORTING BY TYPE (geodata) :
+# SEARCH BY TYPE (geodata) :
 def search_geodata (x, y) :
     """
 
@@ -94,11 +163,11 @@ def search_geodata (x, y) :
         Items found in HDX (from results passed in arguments) that correspond / dont correspond to geodatas.
 
     """
-    x = results[results['has_geodata'] == y]
+    x = x[x['has_geodata'] == y]
     return x
 
 #%%
-# SORTING BY SOURCES :
+# SEARCH BY SOURCES :
 
 def search_sources (x) :
     """
@@ -149,12 +218,20 @@ def select_sources (x, y) :
 # READ MODULE :
 
 # Read dataset and get ressources :
-dataset = Dataset.read_from_hdx("novel-coronavirus-2019-ncov-cases")
+dataset = Dataset.read_from_hdx('66829a94-1cc1-47fb-a5f3-fbd6cf3dbe26')
 resources = dataset.get_resources()
 for res in resources:
     url, path = res.download("C:/Users/Benjamin/Documents/UN/HDX/POOL")
     print(f"Resource URL {url} downloaded to {path}")
 
+#%%
+# CASE STUDY
+dat = Dataset.search_in_hdx('palestine')
+dat = pd.DataFrame(dat)
+dat = search_geodata(dat, False)
+sort_by_date(dat)[['title','dataset_date']]
+
+#%%
 # Get infos on results :
 # Results to dataframe
 results = pd.DataFrame(dataset)
