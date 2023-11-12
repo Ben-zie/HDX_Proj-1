@@ -77,6 +77,75 @@ def sort_by_date (x) :
     return x
 
 #%%
+# SORTING BY TYPE (geodata) :
+def search_geodata (x, y) :
+    """
+
+    Parameters
+    ----------
+    x : dataframe (pandas)
+        Source dataframe generated with results elements
+    y : bool
+        A boolean which tell if (Yes / No) you want to select elements corresponding to geodatas
+
+    Returns
+    -------
+    x : dataframe
+        Items found in HDX (from results passed in arguments) that correspond / dont correspond to geodatas.
+
+    """
+    x = results[results['has_geodata'] == y]
+    return x
+
+#%%
+# SORTING BY SOURCES :
+
+def search_sources (x) :
+    """
+
+    Parameters
+    ----------
+    x : dataframe
+        dataframe generated with reluts of a research in the HDX database.
+
+    Returns
+    -------
+    tmp : list
+        list of each sources presents in the results.
+
+    """
+    tmp = []
+    pool_sources = x.dataset_source
+    for i in pool_sources : tmp.append(re.findall(r'[^,]+(?=,|$)', i))
+    tmp = list(np.concatenate(tmp))
+    tmp = list(set(tmp))
+    return tmp
+
+
+def select_sources (x, y) :
+    """
+
+    Parameters
+    ----------
+    x : dataframe
+        dataframe generatied with results of a research in the HDX database.
+    y : str
+        pattern to look for in the sources.
+
+    Returns
+    -------
+    dataframe
+        selection of items containing y in theire sources.
+
+    """
+    res = []
+    for i in range(0,len(x)) :
+        tmp = re.search(y, x.loc[i].dataset_source)
+        if tmp :
+            res.append(i)
+    return x.loc[res]
+
+#%%
 # READ MODULE :
 
 # Read dataset and get ressources :
