@@ -119,9 +119,9 @@ def search_keyword (x, field = 'title', key = None) :
 # SORT BY DATE
 
 # Using package "re" for regular expressions :
-
 # Set a function to get the dataset date from ['dataset_date'] (for datasets referenced by an intervall period, 
 # the last one is chosen) and returned as a vector :
+
 def get_date (x): 
     """
     Parameters : a dataframe containing research results from the HDX databse
@@ -136,12 +136,22 @@ def get_date (x):
     return x
 
 # Set a function to add a variable to dataset, containing date and sort dataset by this column :
-def sort_by_date (x) :
+def sort_by_date (x, low = None, up = None) :
     """
-    Parameters : a dataframe containing research results from the HDX databse
+    Parameters : 
+        x : a dataframe containing research results from the HDX databse
+        low (optional) : lower year to select
+        up (optional) : upper year to select
     Returns : given dataset sorted by the last entry date in datas
     """
     x = get_date(x)
+    if low and up : 
+        x = x[(x.date_var.dt.year > low) & (x.date_var.dt.year < up)]
+    elif low :
+        x = x[x.date_var.dt.year > low]
+    elif up :
+        x = x[x.date_var.dt.year < up]
+    
     x = x.sort_values(by='date_var',ascending=False)
     return x
 
@@ -216,7 +226,6 @@ def select_sources (x, y) :
 
 #%%
 # READ MODULE :
-
 # Read dataset and get ressources :
 dataset = Dataset.read_from_hdx('66829a94-1cc1-47fb-a5f3-fbd6cf3dbe26')
 resources = dataset.get_resources()
