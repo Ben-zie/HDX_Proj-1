@@ -1,0 +1,152 @@
+---
+title: "HDX_proj-1_main"
+author: "Benjamin DAUTRIF"
+date: "2023-10-26"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# The easiest way to get dplyr is to install the whole tidyverse:
+install.packages("tidyverse")
+# Alternatively, install just dplyr:
+install.packages("dplyr")
+
+# Install HDX package from Github :
+# install.packages("remotes")
+remotes::install_gitlab("dickoa/rhdx")
+install.packages("RCurl")
+# Loading packages :
+library("rhdx")
+library("RCurl")
+```
+
+# Summary : 
+
+This script installs from the *"configuration shunk"* the *"rhdx"* package. All interogations of the HDX database relies on it. 
+
+For more informations, see :    
+https://gitlab.com/dickoa/rhdx
+
+```{r conf, echo=TRUE}
+set_rhdx_config(
+  hdx_site = "prod",
+#  hdx_key = NULL,
+  read_only = TRUE,
+#  hdx_config = NULL,
+#  hdx_config_file = NULL,
+#  configuration = NULL
+)
+```
+
+Verifying configuration by : 
+
+```{r , echo=TRUE}
+# Configuration check :
+  get_rhdx_config()
+```
+
+With result beeing : 
+* <HDX Configuration> 
+   HDX site: prod
+   HDX site url: https://data.humdata.org
+   HDX API key: *
+
+## CALL
+
+A simple (but evolutiv) function to call on HDX-database, searching for *"key-word"* and specifying a *"limit"* for result-list. 
+
+```{r SEARCH MODULE, echo=TRUE}
+Keyword = 'Peru'
+temp = search_datasets(Keyword,rows = 100)
+```
+
+HDX_SEARCH function returns a list of HDX_datasets, regarding selection criterias. We now want to extract  informations from it selection about each dataset : 
+
+
+```{r SEARCH_IN_SELECTION, echo=TRUE}
+SEARCH_IN_SELECTION = function(y){
+  print(unique(unlist(lapply(y,function(x){get_tags_names(x)}))))
+  clef_recherche = readline("Enter TAG for selection : \n")
+  mask = unlist(lapply(temp,function(x){sum(get_tags_names(x)==clef_recherche)}))
+  temp_selected = y[mask]
+  return(temp_selected)
+}
+```
+
+```{r DOWNLOAD, echo=TRUE}
+# Search in selection by TAGs :
+temp_1 = SEARCH_IN_SELECTION(temp)
+
+# Access to ressources in result : 
+temp_1[[1]]$get_resources()
+
+# Destination folder 
+folder = "C:/Users/Benjamin/Documents/UN/HDX/R_HDX_proj-1/HDX_proj-1/Client_1"
+
+# execute download :
+download_resource(temp_1[[1]]$get_resources()[[1]],folder = folder)
+```
+
+```{r HDX FUNCTIONS, echo=TRUE}
+# Module to perform date-specifi search in selection :
+
+GET_DATE <- function(selection,h=FALSE){
+    # Get a selection from HDX_SEARCH funtion and get all dates.
+    temp_date <- lapply(selection,function(x){get_dataset_date(x)})
+    # IF option h is TRUE -> print an histogram time representation
+    if(h == TRUE){
+      hist(table(unlist(x)))
+    }
+    # Each dataset has a [from;to] pattenr. Here are two columns [Min;Max] :
+    min_date_raw = unlist(lapply(temp_date,function(x){print(x[1])}))
+    max_date_raw = unlist(lapply(temp_date,function(x){print(x[2])}))
+    # That are binded by columns :
+    temp_dates = cbind(min_date_raw,max_date_raw)
+    return(temp_dates)
+}
+
+GET_UNDER_DATES = function(x){
+  # Uses GET_DATE method to extract dates from datasets :
+  temp_dates = GET_DATE(x)
+  # print given dates for choice of upper limit :
+  print(temp_dates)
+  # Get clipboard entry for upper limit :
+  date_recherche = readline("Enter DATE_MAX for selection : \n")
+  # Production of a mask for selection subset :
+  mask_date = temp_dates[,1] < date_recherche
+  # Subset in return :
+  return(x[mask_date])
+}
+
+GET_UPPER_DATES = function(x){
+  # Uses GET_DATE method to extract dates from datasets :
+  temp_dates = GET_DATE(x)
+  # print given dates for choice of lesser limit :
+  print(temp_dates)
+  # Get clipboard entry for lesser limit :
+  date_recherche = readline("Enter DATE_IN for selection : \n")
+  # Production of a mask for selection subset :
+  ifelse(!is.na(temp_dates[,2]),temp_dates[,2],temp_dates[,1]) > date_recherche
+  # Subset in return :
+  return(x[mask_date])
+}
+```
+
+```{r , echo=TRUE}
+# Direct pull of a dataset with <HDX Dataset>
+pull_HDX <- function(ID){
+  tmp = pull_dataset(identifier = ID) %>%
+    get_resource(1) %>%
+    read_resource()
+  return(tmp)
+}
+
+res = HDX_SEARCH()
+# ressource = read_resource(ressources_liste[[res]])
+
+system2("pip install lasio")
+```
