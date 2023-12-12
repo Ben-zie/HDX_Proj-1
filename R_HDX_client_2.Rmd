@@ -92,8 +92,10 @@ download_resource(temp_1[[1]]$get_resources()[[1]],folder = folder)
 ```
 
 ```{r HDX FUNCTIONS, echo=TRUE}
-# Module to perform date-specifi search in selection :
+# Get package for char to date conversion :
+library(lubridate)
 
+# Module to perform date-specifi search in selection :
 GET_DATE <- function(selection,h=FALSE){
     # Get a selection from HDX_SEARCH funtion and get all dates.
     temp_date <- lapply(selection,function(x){get_dataset_date(x)})
@@ -106,6 +108,10 @@ GET_DATE <- function(selection,h=FALSE){
     max_date_raw = unlist(lapply(temp_date,function(x){print(x[2])}))
     # That are binded by columns :
     temp_dates = cbind(min_date_raw,max_date_raw)
+    # Convert columns to date type :
+    temp_date[1] = ymd(temp_date[1])
+    temp_date[2] = ymd(temp_date[2])
+    
     return(temp_dates)
 }
 
