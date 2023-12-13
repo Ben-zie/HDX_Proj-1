@@ -6,7 +6,7 @@ Start date : 10/26/2023
 
 Hy ! If anyone reads this message : you are welcome to the HDX_client_project_1
 
-See Wiki for resources and implementation plan. Anyway see below for main documentations usefull for certain :
+See Wiki for resources and implementation. Anyway see below for main documentations usefull for certain :
 
 ## Humanitarian Data eXchange (HDX) :
 ### **Humaniratrian eXchange Langage (HXL)**       
