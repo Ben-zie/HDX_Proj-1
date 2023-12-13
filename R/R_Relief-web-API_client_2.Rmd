@@ -6,6 +6,7 @@ output:
   html_document:
     df_print: paged
 ---
+
 # Summary : 
 
 This script installs from the *"configuration shunk"* the *"httr2"* package. All interogations of the HDX database relies on it. 
