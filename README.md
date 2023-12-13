@@ -4,8 +4,12 @@
 By Benjamin DAUTRIF    
 Start date : 10/26/2023  
 
-# Humanitarian Data eXchange (HDX) :
-## **Humaniratrian eXchange Langage (HXL)**       
+Hy ! If anyone reads this message : you are welcome to the HDX_client_project_1
+
+See Wiki for resources and implementation plan. Anyway see below for main documentations usefull for certain :
+
+## Humanitarian Data eXchange (HDX) :
+### **Humaniratrian eXchange Langage (HXL)**       
 [*API*](https://hxlstandard.org/)
 
 ### **HDX ressources for developpers**    
@@ -21,7 +25,7 @@ https://data.humdata.org/faqs/devs
 ## **Python client package for HDX** :     
 [*Main documentation*](https://hdx-python-api.readthedocs.io/en/latest/)     
 
-# RelifWeb :
+## RelifWeb :
 ### **The relief-web API online documentation**
 [*API*](https://apidoc.rwlabs.org/)
 
