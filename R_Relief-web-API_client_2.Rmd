@@ -105,15 +105,9 @@ GRAB_SEARCH = function(res) {
   web_page = readline("Do you want to open web-page (Y/N) : \n")
   
   item = eval(parse(text = paste0("res$data[[", y, "]]$", field)))
-  
   if (web_page == "Y" |
       web_page == "y") {
-    web_page_url = capture.output(cat(
-      "http://reliefweb.int/taxonomy/term/",
-      res$data[[y]]$id,
-      sep =
-        ""
-    ))
+    web_page_url = res$data[[y]]$href
     browseURL(url = web_page_url)
   }
   
@@ -238,7 +232,7 @@ param_call_2 <- function(endpoint = 1, limit = NULL,field=NULL,value=NULL,date.s
 
 For more informations on *"parameters"* for this API, you may want to loog the online documentation. The **3rd** function *summarize* the results in a sized list : 
 
-Example :
+##Examples :
 
 ```{r example, echo=TRUE}
 endpoint = 1
@@ -249,7 +243,7 @@ operator = "AND"
 # Simple request :
 # res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
 # With DATE START :
-res = param_call_2(endpoint = endpoint,limit = 10,field = field,value = value,date.start = "2019-01-02")
+res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = "2019-01-02")
 ```
 
 
@@ -270,10 +264,11 @@ res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,d
 
 ```{r CASE, echo=TRUE}
 # Forge request :
-req = req_call(var_endpoint)
 
-res = param_call_2(req = req, field = field, value = value)
+res = param_call_2(endpoint = 1,limit = 20, field = c("title","title"), value = c("gaza","health"),operator = "AND")
+
 res_summary(res,field = "title")
 
-param_call_2(req,field,value,operator)
+lapply(res$data,function(x){x$fields$title})
+
 ```
