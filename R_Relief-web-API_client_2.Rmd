@@ -53,8 +53,7 @@ req_call <- function(var_endpoint){
     "training",
     "sources",
     "blog",
-    "book",
-    "references"
+    "book"
   )
   req = request("https://api.reliefweb.int/v1/")
   req = req_url_path_append(req, endpoints[var_endpoint])
@@ -74,14 +73,13 @@ res_summary <- function(res, field, lim = 100){
 # - output : a list of fields from objects extracted by [res]
 fields = c(
     "title", # reports
-    "name" # disasters
-    # "countries",
-    # "jobs",
-    # "training",
-    # "sources",
-    # "blog",
-    # "book",
-    # "references"
+    "name", # disasters
+    "name", # "countries",
+    "title", # "jobs",
+    "title", # "training",
+    "name", # "sources",
+    "title", # "blog",
+    "title" # "book",
   )
 eval(parse(text = paste("
 for(i in seq(1,lim)){
@@ -89,6 +87,39 @@ print(res$data[i][[1]]$fields$",fields[field],")}",sep="")))
 }
 ```
 
+```{r GRAB,echo=TRUE}
+# Function destined to be the last step of the search, like a "hand on it" when GRABBING specific result :
+GRAB_SEARCH = function(res) {
+  # Takes a result pool to print a summary (in the "title" or "name" depending on type :
+  title_list = lapply(res$data, function(x) {
+    print(x$fields)
+  })
+  # Print the list as a summary to choose items :
+  print(title_list)
+  # Invite to choose :
+  # - specific resource :
+  y = as.numeric(readline("Choose ressource to view on web : \n"))
+  # - specific field (see.....) :
+  field = readline("Choose a field to view : \n")
+  # - optional link to the web-page
+  web_page = readline("Do you want to open web-page (Y/N) : \n")
+  
+  item = eval(parse(text = paste0("res$data[[", y, "]]$", field)))
+  
+  if (web_page == "Y" |
+      web_page == "y") {
+    web_page_url = capture.output(cat(
+      "http://reliefweb.int/taxonomy/term/",
+      res$data[[y]]$id,
+      sep =
+        ""
+    ))
+    browseURL(url = web_page_url)
+  }
+  
+  return(item)
+}
+```
 
 ```{r pressure, echo=TRUE}
 # Perform a request that covers multi-arguments and operators :
@@ -221,15 +252,20 @@ operator = "AND"
 res = param_call_2(endpoint = endpoint,limit = 10,field = field,value = value,date.start = "2019-01-02")
 ```
 
+
 ```{r example_2, echo=TRUE}
-endpoint = 1
-value = c("Who", "What", "Where")
-field = c("title")
+endpoint = 2
+value = c("storm","hurrican")
+field = c("name","name")
+operator = "AND"
 
 # Simple request :
 # res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
 # With DATE START :
-res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = "2019-01-02")
+res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = "2019-01-02",operator = operator)
+
+# res = param_call_2(endpoint = 6,limit = 10,field = c("name"),value = c("congo"))
+
 ```
 
 ```{r CASE, echo=TRUE}
