@@ -92,7 +92,7 @@ print(res$data[i][[1]]$fields$",fields[field],")}",sep="")))
 
 ```{r pressure, echo=TRUE}
 # Perform a request that covers multi-arguments and operators :
-param_call_2 <- function(endpoint = 1, limit = NULL,field=NULL,value=NULL,operator=NULL){
+param_call_2 <- function(endpoint = 1, limit = NULL,field=NULL,value=NULL,date.start=NULL,date.end=NULL,operator=NULL){
   
   # First call a request on the Relief Web aPI :
   req = req_call(endpoint)
@@ -123,8 +123,50 @@ param_call_2 <- function(endpoint = 1, limit = NULL,field=NULL,value=NULL,operat
   if(!is.null(operator)){
       operator = capture.output(cat("query[operator]=",operator,sep = ""))
   }
+  
+  # date.start argument
+  if (is.null(date.start) == TRUE |
+      is.character(date.start) == TRUE) {
+    date.start1 <- ifelse(
+      is.null(date.start) == TRUE,
+      "",
+      paste0(
+        "&filter[field]=date&filter[value][from]=",
+        date.start,
+        "T00:00:00%2B00:00"
+      )
+    )
+  } else{
+    stop(
+      "The argument 'date.start' must be set to NULL (no restriction on sample start date) or
+                                requires a character string in the format 'yyyy-mm-dd'.",
+      call. = FALSE
+    )
+  }
+  
+  # date.end argument
+  if (is.null(date.end) == TRUE | is.character(date.end) == TRUE) {
+    date.end1 <- ifelse(
+      is.null(date.end) == TRUE,
+      "",
+      paste0(
+        "&filter[field]=date&filter[value][to]=",
+        date.end,
+        "T00:00:00%2B00:00"
+      )
+    )
+  } else{
+    stop(
+      "The argument 'date.end' must be set to NULL (no restriction on sample end date) or
+                              requires a character string in the format 'yyyy-mm-dd'.",
+      call. = FALSE
+    )
+  }
+  print(date.end1)
   # get the API-URL for Relief Web and ADD LIMIT :
   kickstart = paste0(req$url,limit1)
+  kickstart = paste0(kickstart,date.start1)
+  kickstart = paste0(kickstart,date.end1)
   # Depending on args, ADD PARAMETERS to request :
   # - each arg MUST be separated by a "&"
   if(!is.null(values)){
@@ -163,20 +205,31 @@ param_call_2 <- function(endpoint = 1, limit = NULL,field=NULL,value=NULL,operat
 }
 ```
 
-
-For more informations on *"parameters"* for this API, you may want to loog the online documentation. 
-
-The **3rd** function *summarize* the results in a sized list : 
-
+For more informations on *"parameters"* for this API, you may want to loog the online documentation. The **3rd** function *summarize* the results in a sized list : 
 
 Example :
 
 ```{r example, echo=TRUE}
 endpoint = 1
-value = c("gaza","Cheat","Sheet")
+value = c("Who", "What", "Where")
 field = c("title","title","title")
 operator = "AND"
-res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value)
+
+# Simple request :
+# res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
+# With DATE START :
+res = param_call_2(endpoint = endpoint,limit = 10,field = field,value = value,date.start = "2019-01-02")
+```
+
+```{r example_2, echo=TRUE}
+endpoint = 1
+value = c("Who", "What", "Where")
+field = c("title")
+
+# Simple request :
+# res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
+# With DATE START :
+res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = "2019-01-02")
 ```
 
 ```{r CASE, echo=TRUE}
