@@ -11,15 +11,15 @@ output:
 
 This script installs from the *"configuration shunk"* the *"httr2"* package. All interogations of the HDX database relies on it. 
 
-For more informations, see :    
+For more informations, see :                                    
+https://httr2.r-lib.org/                                    
+https://cran.r-project.org/web/packages/httr2/                                    
 
-https://httr2.r-lib.org/
+URL of the reliefWeb API :                                    
+https://apidoc.rwlabs.org/                                    
 
-https://cran.r-project.org/web/packages/httr2/
+Code for parametric search is largely inspired form "Disastr.api" ; wrapper for the UN OCHA ReliefWeb Disaster Events API. Adaptation done to adapte for other ENDPOINTS (see below, eg. "reports").
 
-URL of the reliefWeb API :
-
-https://apidoc.rwlabs.org/
 
 ```{r setup, include=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -36,13 +36,15 @@ library("rjson")
 
 # Variables definition :
 
-An *"endpoint"* must be chosen to define the type of documents to search in. *"parameters"* are given in two vectors : [FIELD] and [VALUE] of the same length.      
+*"Endpoint"* defines the type of documents (eg, reports, job annonce, disaster event....). *"parameters"* are then given to search for words in specific fields ; some being specific to certain *endpoints*.      
 
 For more information on parameters, see [API documentation]("https://apidoc.rwlabs.org/parameters")
 
-## The client is composed of 3 functions :    
+# Client 
 
-**1st** one calls for the API url and defines the *"endpoint"* :
+3 functions :    
+
+**1.** : calls API url and defines *"endpoint"*
 
 ```{r REQUEST, echo=TRUE}
 req_call <- function(var_endpoint){
@@ -64,7 +66,9 @@ req_call <- function(var_endpoint){
 }
 ```
 
-It returns a request that can be enriched with *"parameters"* with the **2nd** function :
+Returns a REQUEST which is to enrich with *"parameters"*. 
+
+**2.** Summaryze results :
 
 Beware of parentheses in multi-arguments calls for URL management seek.
 
@@ -72,58 +76,78 @@ Beware of parentheses in multi-arguments calls for URL management seek.
 res_summary <- function(res, field, lim = 100){
 # - input : { Resultat after JSon extract [res] ; The field to print in final list [field]}
 # - output : a list of fields from objects extracted by [res]
+
+# SUMMARY (depending on types as ENDPOINT, due to different API structures ; see API) : 
+  # Example :
+  # - endpoint = 1 -> reports -> title
+  # - endpoint = 2 -> disasters -> name
+  
 fields = c(
     "title", # reports
-    "name", # disasters
-    "name", # "countries",
+    "name",  # disasters
+    "name",  # "countries",
     "title", # "jobs",
     "title", # "training",
-    "name", # "sources",
+    "name",  # "sources",
     "title", # "blog",
-    "title" # "book",
+    "title"  # "book",
   )
 eval(parse(text = paste("
 for(i in seq(1,lim)){
-print(res$data[i][[1]]$fields$",fields[field],")}",sep="")))
+print(paste0(i,\" -> \",res$data[i][[1]]$fields$",fields[field],"))}",sep="")))
 }
 ```
 
-```{r GRAB,echo=TRUE}
-# Function destined to be the last step of the search, like a "hand on it" when GRABBING specific result :
-GRAB_SEARCH = function(res) {
-  # Takes a result pool to print a summary (in the "title" or "name" depending on type :
+**3.** Get specific FIELD in specific resource and see on web :
+
+```{r COLLECT,echo=TRUE}
+COLLECT_SEARCH = function(res) {
+  # Objectif : print a summary according to given FIELD
+  # Input : a result-pool 
+  # Output : LIST of fields for all pool
+  # PRINT MENUE :
   title_list = lapply(res$data, function(x) {
     print(x$fields)
   })
-  # Print the list as a summary to choose items :
   print(title_list)
-  # Invite to choose :
-  # - specific resource :
+  # KEYBOARD ENTRY :
+  # - CHOOSE resource :
   y = as.numeric(readline("Choose ressource to view on web : \n"))
-  # - specific field (see.....) :
+  # - CHOOSE field (see.....) :
   field = readline("Choose a field to view : \n")
-  # - optional link to the web-page
+  # - OPTIONAL web-page :
   web_page = readline("Do you want to open web-page (Y/N) : \n")
-  
-  item = eval(parse(text = paste0("res$data[[", y, "]]$", field)))
+  # LIST FIELDS in the pool :
+  result = eval(parse(text = paste0("res$data[[", y, "]]$", field)))
+  # WEB PAGE :
   if (web_page == "Y" |
       web_page == "y") {
     web_page_url = res$data[[y]]$href
     browseURL(url = web_page_url)
   }
-  
-  return(item)
+  # RETURN the field-list 
+  return(result)
 }
 ```
 
-```{r pressure, echo=TRUE}
+Main function :  
+
+```{r PARAM_CALL, echo=TRUE}
 # Perform a request that covers multi-arguments and operators :
-param_call_2 <- function(endpoint = 1, limit = NULL,field=NULL,value=NULL,date.start=NULL,date.end=NULL,operator=NULL){
-  
-  # First call a request on the Relief Web aPI :
+param_call_2 <-
+  function(endpoint = 1,
+           limit = NULL,
+           field = NULL,
+           value = NULL,
+           date.start = NULL,
+           date.end = NULL,
+           operator = NULL) {
+    
+  # Ccall a request on the Relief Web aPI :
   req = req_call(endpoint)
   
-  # limit argument (if not given in arg. se limit in IF method) :
+  # LIMIT argument (if not given in arg. se limit in IF method) :
+  
   if (is.null(limit) == TRUE | is.numeric(limit) == TRUE) {
     limit1 <-
       ifelse(is.null(limit) == TRUE,
@@ -135,7 +159,10 @@ param_call_2 <- function(endpoint = 1, limit = NULL,field=NULL,value=NULL,date.s
       call. = FALSE
     )
   }
-  # In this version, VALUES and FIELDS are PAIRED : meaning it MUST be passed as TWO VECTORS of the same size (see example) :
+  
+  # In this version, VALUES and FIELDS are PAIRED :  MUST be  TWO VECTORS of the SAME SIZE : 
+  # EXAMPLE : to search for two words in the same field (here "title"), see 
+  # param_call_2(...,field = c("title, "title"),value = c("word_1", "word_2"), )
   values = c()
   for(i in seq(1,length(value))){
     if(!is.null(field[i])){
@@ -145,12 +172,12 @@ param_call_2 <- function(endpoint = 1, limit = NULL,field=NULL,value=NULL,date.s
       values = append(values, capture.output(cat("query[value]=",value[i],sep = "")))
     }
   }
-  # OPERATOR is to be given only once : 
+  # OPERATOR (given only once) : 
   if(!is.null(operator)){
       operator = capture.output(cat("query[operator]=",operator,sep = ""))
   }
   
-  # date.start argument
+  # DATE.START argument
   if (is.null(date.start) == TRUE |
       is.character(date.start) == TRUE) {
     date.start1 <- ifelse(
@@ -165,12 +192,12 @@ param_call_2 <- function(endpoint = 1, limit = NULL,field=NULL,value=NULL,date.s
   } else{
     stop(
       "The argument 'date.start' must be set to NULL (no restriction on sample start date) or
-                                requires a character string in the format 'yyyy-mm-dd'.",
+      requires a character string in the format 'yyyy-mm-dd'.",
       call. = FALSE
     )
   }
   
-  # date.end argument
+  # DATE.END argument
   if (is.null(date.end) == TRUE | is.character(date.end) == TRUE) {
     date.end1 <- ifelse(
       is.null(date.end) == TRUE,
@@ -184,33 +211,40 @@ param_call_2 <- function(endpoint = 1, limit = NULL,field=NULL,value=NULL,date.s
   } else{
     stop(
       "The argument 'date.end' must be set to NULL (no restriction on sample end date) or
-                              requires a character string in the format 'yyyy-mm-dd'.",
+      requires a character string in the format 'yyyy-mm-dd'.",
       call. = FALSE
     )
   }
-  print(date.end1)
-  # get the API-URL for Relief Web and ADD LIMIT :
-  kickstart = paste0(req$url,limit1)
-  kickstart = paste0(kickstart,date.start1)
-  kickstart = paste0(kickstart,date.end1)
-  # Depending on args, ADD PARAMETERS to request :
-  # - each arg MUST be separated by a "&"
+
+  # Get RELIEFWEB - API-URL and add PARAMETEERS (Makes a "Kickstart"): 
+    kickstart = paste0(req$url,limit1)
+    kickstart = paste0(kickstart,date.start1)
+    kickstart = paste0(kickstart,date.end1)
+  # Add to the KICKSTART the [KEY WORDS ; FIELDS] for research 
+  # RECALL : words and fields a to give by couple. Have to be presented as equaly sized VECTOR 
   if(!is.null(values)){
+    # vectors are of the form : 
+    # ["query[fields][]=.........." ; ""query[value]=.........."]
     temp = capture.output(cat(values,sep = "&"))
     temp = capture.output(cat(temp,operator,sep = "&"))
     temp = capture.output(cat("&",temp,sep = ""))
     temp = capture.output(cat(kickstart,temp,sep=""))
+    # arranged in the form : [.................]
   }else{
-    temp=Kick
+    temp=kickstart
   }
+    
   # Print URL for debugging :
   print(temp)
-  # Perform request :
+  
+  # PERFORM REQUEST :
   request = request(temp)
   resp = req_perform(request)
-  # Extract JSON :
+  
+  # JSON :
   res = resp_body_json(resp)
-  # Print infos : 
+  
+  # INFOS : 
   print("for :")
   print(res$href)
   print("had :")
@@ -218,15 +252,13 @@ param_call_2 <- function(endpoint = 1, limit = NULL,field=NULL,value=NULL,date.s
   print("got :")
   print(res$count)
 
-  # Print summary by types : 
+  # SUMMARY (depending on types as ENDPOINT, due to different API structures ; see API) : 
+  # Example :
   # - endpoint = 1 -> reports -> title
   # - endpoint = 2 -> disasters -> name
-  # if(endpoint==1){
-  # print(unlist(lapply(res$data,function(x){x$fields$title})))
-  # }else if(endpoint==2){
-  # print(unlist(lapply(res$data,function(x){x$fields$name})))
-  # }
   print(res_summary(res,field = endpoint,lim = limit))
+  
+  # Return list of results :
   return(res)
 }
 ```
@@ -235,7 +267,7 @@ For more informations on *"parameters"* for this API, you may want to loog the o
 
 ##Examples :
 
-```{r example, echo=TRUE}
+```{r EXAMPLE_1, echo=TRUE}
 endpoint = 1
 value = c("Who", "What", "Where")
 field = c("title","title","title")
@@ -248,7 +280,7 @@ res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,d
 ```
 
 
-```{r example_2, echo=TRUE}
+```{r EXAMPLE_2, echo=TRUE}
 endpoint = 2
 value = c("storm","hurrican")
 field = c("name","name")
