@@ -12,8 +12,7 @@ See Wiki for resources and implementation. Anyway see below for some usefull doc
 ### **Humaniratrian eXchange Langage (HXL)**       
 [*API*](https://hxlstandard.org/)
 
-### **HDX ressources for developpers**    
-https://data.humdata.org/faqs/devs
+[*HDX ressources for developpers*](https://data.humdata.org/faqs/devs)
 
 ### HLX connector :
 [*Client interface*](https://proxy.hxlstandard.org/data/source)
