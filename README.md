@@ -2,7 +2,9 @@
 (Set of scripts to work with the "[Humanitarian Data eXchange](https://data.humdata.org/ "HDX Main page")" API)
 ---
 By Benjamin DAUTRIF    
-Start date : 10/26/2023  
+Start date : 10/26/2023 
+
+[HDX_Proj-1/wiki](https://github.com/Ben-zie/HDX_Proj-1/wiki)
 
 Hy ! If anyone reads this message : you are welcome to the HDX_client_project_1
 
