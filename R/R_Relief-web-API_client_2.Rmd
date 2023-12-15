@@ -417,7 +417,7 @@ res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.star
 
 endpoint = 1
 limit = 20
-value = c("cuba")
+value = c("cod")
 # RECALL : field must correspond to result structure (see Relief Web API) :
 # Either :
 field = c("title")
@@ -439,7 +439,7 @@ res = Main(
   date.start = date.start
 )
 
-numero = 17
+numero = 1
 
 toto = PRINT_SEARCH(res = res,numero = numero,namefile = "test_1",txt = TRUE,html = TRUE)
 
