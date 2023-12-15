@@ -236,6 +236,17 @@ Main <-
   # Ccall a request on the Relief Web aPI :
   req = req_call(endpoint)
   
+   endpoints = c(
+    "reports",
+    "disasters",
+    "countries",
+    "jobs",
+    "training",
+    "sources",
+    "blog",
+    "book"
+  )
+   
   # LIMIT argument (if not given in arg. se limit in IF method) :
   
   if (is.null(limit) == TRUE | is.numeric(limit) == TRUE) {
@@ -361,7 +372,7 @@ Main <-
   # Example :
   # - endpoint = 1 -> reports -> title
   # - endpoint = 2 -> disasters -> name
-  print(res_summary(res,field = endpoint,lim = limit))
+  print(res_summary(res,type = endpoints[endpoint]))
   
   # Return list of results :
   return(res)
@@ -406,7 +417,7 @@ res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.star
 
 endpoint = 1
 limit = 20
-value = c("gaza")
+value = c("cuba")
 # RECALL : field must correspond to result structure (see Relief Web API) :
 # Either :
 field = c("title")
@@ -430,7 +441,7 @@ res = Main(
 
 numero = 17
 
-toto = PRINT_SEARCH(res = res,numero = numero,namefile = "test_1",pdf = TRUE,txt = FALSE,html = TRUE)
+toto = PRINT_SEARCH(res = res,numero = numero,namefile = "test_1",txt = TRUE,html = TRUE)
 
 # PRINT_SEARCH = function(res,numero,namefile){
 # # Menu results : 
