@@ -166,7 +166,7 @@ PRINT_SEARCH = function(res,
   if(!is.null(txt)){
   sink(
     file = paste0(
-      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/Logs/",
+      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/Logs/",
       namefile,
       ".txt"
     ),
@@ -184,7 +184,7 @@ PRINT_SEARCH = function(res,
   if(!is.null(html)){
     sink(
     file = paste0(
-      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/HTML/",
+      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/HTML/",
       namefile,
       ".html"
     ),
@@ -201,7 +201,7 @@ PRINT_SEARCH = function(res,
     req_perform(
       request(resp$data[[1]]$fields$file[[1]]$url),
       path = paste0(
-        "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/PDF/",
+        "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/PDF/",
         namefile,
         ".pdf"
       )
