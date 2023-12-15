@@ -130,18 +130,88 @@ COLLECT_SEARCH = function(res) {
 }
 ```
 
+```{r PRINT,echo=TRUE}
+PRINT_SEARCH = function(res,
+                        numero,
+                        namefile,
+                        txt = NULL,
+                        html = NULL,
+                        pdf = NULL) {
+  
+  # Menu results : 
+  lapply(res$data,function(x){x$fields$name})
+  
+  # Request URL :
+  url = res$data[[numero]]$href
+  req = request(url)
+  
+  resp = resp_body_json(req_perform(req))
+  print(url)
+  
+  # Print resource to txt file :
+  sink(
+    file = paste0(
+      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/Logs/",
+      namefile,
+      ".txt"
+    ),
+    append = FALSE,
+    type = c("output")
+  )
+  print(resp)
+  sink()
+  
+ # Print resource as HTML : 
+  if(html==TRUE){
+    sink(
+    file = paste0(
+      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/HTML/",
+      namefile,
+      ".html"
+    ),
+    append = FALSE,
+    type = c("output")
+  )
+  print(resp$data[[1]]$fields$`body-html`)
+  sink()
+  }
+  
+  # Save pdf file :
+  if (pdf == TRUE) {
+    req_perform(
+      request(resp$data[[1]]$fields$file[[1]]$url),
+      path = paste0(
+        "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/PDF/",
+        namefile,
+        ".pdf"
+      )
+    )
+  }
+  
+  # sink(file = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/Logs/",namefile,"_pdf.txt"), append = FALSE, type = c("output"))
+  # if(pdf==TRUE){
+  # library(pdftools)
+  # pdftools::pdf_text(pdf = req$body)
+  # }
+  # sink()
+  
+  return(resp_body_json(req_perform(req)))
+}
+```
+
 Main function :  
 
-```{r PARAM_CALL, echo=TRUE}
+```{r Main, echo=TRUE}
 # Perform a request that covers multi-arguments and operators :
-param_call_2 <-
+Main <-
   function(endpoint = 1,
            limit = NULL,
            field = NULL,
            value = NULL,
            date.start = NULL,
            date.end = NULL,
-           operator = NULL) {
+           operator = NULL, 
+           disaster = NULL) {
     
   # Ccall a request on the Relief Web aPI :
   req = req_call(endpoint)
@@ -162,7 +232,7 @@ param_call_2 <-
   
   # In this version, VALUES and FIELDS are PAIRED :  MUST be  TWO VECTORS of the SAME SIZE : 
   # EXAMPLE : to search for two words in the same field (here "title"), see 
-  # param_call_2(...,field = c("title, "title"),value = c("word_1", "word_2"), )
+  # Main(...,field = c("title, "title"),value = c("word_1", "word_2"), )
   values = c()
   for(i in seq(1,length(value))){
     if(!is.null(field[i])){
@@ -216,6 +286,20 @@ param_call_2 <-
     )
   }
 
+   # disaster argument
+  if(is.null(disaster)==TRUE |
+     is.character(disaster)==TRUE) {
+    disaster1 <- ifelse(is.null(disaster) == TRUE,
+                        "",
+                        paste0("query[value]=type:", paste(
+                          gsub("\\s{1}", "%", disaster), collapse = "|"
+                        )))
+  } else{
+    stop(
+      "The argument 'disaster' requires a character vector of disaster types to be queried, or        is set to NULL.",
+      call. = FALSE
+    )
+  }
   # Get RELIEFWEB - API-URL and add PARAMETEERS (Makes a "Kickstart"): 
     kickstart = paste0(req$url,limit1)
     kickstart = paste0(kickstart,date.start1)
@@ -227,6 +311,7 @@ param_call_2 <-
     # ["query[fields][]=.........." ; ""query[value]=.........."]
     temp = capture.output(cat(values,sep = "&"))
     temp = capture.output(cat(temp,operator,sep = "&"))
+    temp = capture.output(cat(temp,disaster1,sep = "&"))
     temp = capture.output(cat("&",temp,sep = ""))
     temp = capture.output(cat(kickstart,temp,sep=""))
     # arranged in the form : [.................]
@@ -268,15 +353,15 @@ For more informations on *"parameters"* for this API, you may want to loog the o
 ##Examples :
 
 ```{r EXAMPLE_1, echo=TRUE}
-endpoint = 1
-value = c("Who", "What", "Where")
-field = c("title","title","title")
-operator = "AND"
+endpoint = 2
+value = c("Guinea")
+field = c("name")
+# operator = "AND"
 
 # Simple request :
-# res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
+# res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
 # With DATE START :
-res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = "2019-01-02")
+res = Main(endpoint = endpoint,limit = 10,field = field,value = value,disaster = "storm",date.start = "2020-01-02")
 ```
 
 
@@ -287,21 +372,51 @@ field = c("name","name")
 operator = "AND"
 
 # Simple request :
-# res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
+# res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
 # With DATE START :
-res = param_call_2(endpoint = endpoint,limit = 100,field = field,value = value,date.start = "2019-01-02",operator = operator)
+res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.start = "2019-01-02",operator = operator)
 
-# res = param_call_2(endpoint = 6,limit = 10,field = c("name"),value = c("congo"))
+# res = Main(endpoint = 6,limit = 10,field = c("name"),value = c("congo"))
 
 ```
 
 ```{r CASE, echo=TRUE}
 # Forge request :
+# res = Main(endpoint = 1,limit = 20, field = c("title","title"), value = c("gaza","health"),operator = "AND")
 
-res = param_call_2(endpoint = 1,limit = 20, field = c("title","title"), value = c("gaza","health"),operator = "AND")
+endpoint = 2
+value = c("Guinea")
+field = c("title")
+operator = "AND"
 
-res_summary(res,field = "title")
+# Simple request parameters :
+# res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
 
-lapply(res$data,function(x){x$fields$title})
+res = Main(
+  endpoint = 1,
+  limit = 50,
+  field = field,
+  value = value,
+  # disaster = "storm",
+  date.start = "2020-01-02"
+)
 
+numero = 2
+
+toto = PRINT_SEARCH(res = res,numero = numero,namefile = "test_1",pdf = TRUE,txt = FALSE,html = TRUE)
+
+# PRINT_SEARCH = function(res,numero,namefile){
+# # Menu results : 
+# lapply(res$data,function(x){x$fields$name})
+# # Request URL :
+# url = res$data[[numero]]$href
+# req = request(url)
+# print(url)
+# # Print resource information from RESQUEST to FILE :
+# sink(file = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/Logs/",namefile,".txt"), append = FALSE, type = c("output"))
+# print(resp_body_json(req_perform(req)))
+# sink()
+# browseURL(url)
+# }
+#_______________________________________________________________________________
 ```
