@@ -1,8 +1,9 @@
 --- 
-title: "R_http-API_client_1"
+title: "R http API client 1"
 author: "Benjamin DAUTRIF"
 date: "2023-10-27"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -32,6 +33,36 @@ knitr::opts_chunk$set(echo = TRUE)
 library("httr2")
 # Load the package required to read JSON files.
 library("rjson")
+
+# DEFINE [ENDPOINTS ; FIELDS] CORRESPONDENCE TABLE : 
+# Each ENDPOINTs have it's own structure in the Relief Web API 
+# (see "https://apidoc.reliefweb.int/fields-tables" for more).
+# For this to be transparent to user, function needs to switch those on demande.
+# RECALL : ENDPOINTs are to be chosen in a list, same as following :
+endpoints = c(
+    "reports",
+    "disasters",
+    "countries",
+    "jobs",
+    "training",
+    "sources",
+    "blog",
+    "book"
+  )
+   
+# Thus the corresponding fields-table for TITLE/NAME :  
+fields = c(
+    "title", # reports
+    "name",  # disasters
+    "name",  # "countries",
+    "title", # "jobs",
+    "title", # "training",
+    "name",  # "sources",
+    "title", # "blog",
+    "title"  # "book",
+  )
+
+Param_table = cbind(fields,endpoints)
 ```
 
 # Variables definition :
@@ -47,19 +78,10 @@ For more information on parameters, see [API documentation]("https://apidoc.rwla
 **1.** : calls API url and defines *"endpoint"*
 
 ```{r REQUEST, echo=TRUE}
-req_call <- function(var_endpoint){
-  endpoints = c(
-    "reports",
-    "disasters",
-    "countries",
-    "jobs",
-    "training",
-    "sources",
-    "blog",
-    "book"
-  )
+req_call <- function(endpoint){
+  
   req = request("https://api.reliefweb.int/v1/")
-  req = req_url_path_append(req, endpoints[var_endpoint])
+  req = req_url_path_append(req, endpoints[endpoint])
   req$url = paste0(req$url,"?appname=R_HDX_client_2")
   
   return(req)
@@ -74,36 +96,15 @@ Beware of parentheses in multi-arguments calls for URL management seek.
 
 ```{r SUMMARY,echo=TRUE}
 res_summary <- function(res, type){
-# - input : { Resultat after JSon extract [res] ; The field to print in final list [field]}
-# - output : a list of fields from objects extracted by [res]
 
-# SUMMARY (depending on types as ENDPOINT, due to different API structures ; see API) : 
-  # Example :
-  # - endpoint = 1 -> reports -> title
-  # - endpoint = 2 -> disasters -> name
+  # - input : { Resultat after JSon extract [res] ; The field to print in final list [field]}
+  # - output : a list of fields from objects extracted by [res]
   
-fields = c(
-    "title", # reports
-    "name",  # disasters
-    "name",  # "countries",
-    "title", # "jobs",
-    "title", # "training",
-    "name",  # "sources",
-    "title", # "blog",
-    "title"  # "book",
-  )
-types = c(
-    "reports",
-    "disasters",
-    "countries",
-    "jobs",
-    "training",
-    "sources",
-    "blog",
-    "book"
-  )
-
-Param_table = cbind(fields,types)
+  # SUMMARY (depending on types as ENDPOINT, due to different API structures ; see API) : 
+    # Example :
+    # - endpoint = 1 -> reports -> title
+    # - endpoint = 2 -> disasters -> name
+    
 x = Param_table[,2] == type
 field = Param_table[x,1]
 
@@ -149,10 +150,15 @@ COLLECT_SEARCH = function(res) {
 PRINT_SEARCH = function(res,
                         numero,
                         namefile,
+                        endpoint,
                         txt = NULL,
                         html = NULL,
                         pdf = NULL) {
-  
+
+  # Get specific ENDPOINT item :
+  x = Param_table[,2] == endpoints[endpoint]
+  field = Param_table[x,1]
+
   # Menu results : 
   lapply(res$data,function(x){x$fields$name})
   
@@ -164,20 +170,27 @@ PRINT_SEARCH = function(res,
   
   # Print resource to txt file :
   if(!is.null(txt)){
-  sink(
-    file = paste0(
-      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/Logs/",
-      namefile,
-      ".txt"
-    ),
-    append = FALSE,
-    type = c("output")
-  )
-  print(resp$data[[1]]$fields$title)
+  # sink(
+  #   file = paste0(
+  #     "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/Logs/",
+  #     namefile,
+  #     ".txt"
+  #   ),
+  #   append = FALSE,
+  #   type = c("output")
+  # )
+  ifelse(endpoint == 1,
+      req_perform(
+      request(res$data[[1]]$href),
+          path = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/",namefile)),
+  ifelse(endpoint == 2,
+      resp$data[[1]]$fields$description,
+      "autre type de document..."
+  ))
   # print(resp$data[[1]]$fields$name)
   # print(resp$data[[1]]$fields$description)
   print(resp$data[[1]]$fields$body)
-  sink()
+  # sink()
   }
   
  # Print resource as HTML : 
@@ -199,11 +212,10 @@ PRINT_SEARCH = function(res,
   # Save pdf file :
   if (!is.null(pdf)) {
     req_perform(
-      request(resp$data[[1]]$fields$file[[1]]$url),
+      request(resp$data[[1]]$fields$url),
       path = paste0(
         "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/PDF/",
-        namefile,
-        ".pdf"
+        namefile
       )
     )
   }
@@ -221,7 +233,7 @@ PRINT_SEARCH = function(res,
 
 Main function :  
 
-```{r Main, echo=TRUE}
+```{r MAIN, echo=TRUE}
 # Perform a request that covers multi-arguments and operators :
 Main <-
   function(endpoint = 1,
@@ -253,38 +265,10 @@ Main <-
             # disaster = NULL
             # country = NULL
     
-  # 1. CALL REQUEST ON THE RELIEF WEB API :
-  req = req_call(endpoint)
-  
-  # 2. DEFINE [ENDPOINTS ; FIELDS] CORRESPONDENCE TABLE : 
-  # Each ENDPOINTs have it's own structure in the Relief Web API 
-  # (see "https://apidoc.reliefweb.int/fields-tables" for more).
-  # For this to be transparent to user, function needs to switch those on demande.
-  # RECALL : ENDPOINTs are to be chosen in a list, same as following :
-   endpoints = c(
-    "reports",
-    "disasters",
-    "countries",
-    "jobs",
-    "training",
-    "sources",
-    "blog",
-    "book"
-  )
+   # 1. CALL REQUEST ON THE RELIEF WEB API :
+   req = req_call(endpoint)
    
-  # Thus the corresponding fields-table for TITLE/NAME :  
-   fields = c(
-    "title", # reports
-    "name",  # disasters
-    "name",  # "countries",
-    "title", # "jobs",
-    "title", # "training",
-    "name",  # "sources",
-    "title", # "blog",
-    "title"  # "book",
-  )
-   
-   # 3. PARAMETRISATION : 
+   # 2. PARAMETRISATION : 
    # Conversation with API goes through URLs. First strep is to create each parameter code.
    # - LIMIT argument (if not given in arg. se limit in IF method) :
    if (is.null(limit) == TRUE | is.numeric(limit) == TRUE) {
@@ -442,7 +426,7 @@ For more informations on *"parameters"* for this API, you may want to loog the o
 
 ##Examples :
 
-```{r EXAMPLE_1, echo=TRUE}
+```{r EXAMPLE 1, echo=TRUE}
 endpoint = 1
 value = c("flood")
 field = c("name")
@@ -455,7 +439,7 @@ res = Main(endpoint = endpoint,limit = 10, ascending.date = TRUE)
 ```
 
 
-```{r EXAMPLE_2, echo=TRUE}
+```{r EXAMPLE 2, echo=TRUE}
 endpoint = 1
 value = c("cuba","hurrican")
 field = c("title","title")
@@ -471,9 +455,6 @@ res = Main(
   value = value
     
 )
-
-PRINT_SEARCH(res = res,numero = 6,html = TRUE,txt = TRUE, namefile = "truc")
-# res = Main(endpoint = 6,limit = 10,field = c("name"),value = c("congo"))
 
 ```
 
@@ -510,23 +491,20 @@ numero = 68
 test_1 = PRINT_SEARCH(
   res = res,
   numero = numero,
-  namefile = "test_1",
+  endpoint = endpoint,
+  namefile = "test_2",
   txt = TRUE,
-  html = TRUE
+  html = TRUE,
+  pdf = TRUE
 )
 
-# PRINT_SEARCH = function(res,numero,namefile){
-# # Menu results : 
-# lapply(res$data,function(x){x$fields$name})
-# # Request URL :
-# url = res$data[[numero]]$href
-# req = request(url)
-# print(url)
-# # Print resource information from RESQUEST to FILE :
-# sink(file = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/Logs/",namefile,".txt"), append = FALSE, type = c("output"))
-# print(resp_body_json(req_perform(req)))
-# sink()
-# browseURL(url)
-# }
-#_______________________________________________________________________________
+# Request collections :
+
+# Search for epidemiologic events for DENGUE disease, chronologicaly ordered :
+# x = Main(endpoint = 2,ascending.date = FALSE,disaster = "Epidemic", value = c("Dengue"),field = c("name"))
+# res_summary(x,type = "disasters")
+
+# Search for latest REPORTS with WHO in their title :
+# x = Main(endpoint = 1,limit = 50,ascending.date = FALSE, value = c("WHO"),field = c("title"))
+# res_summary(x,type = "reports")
 ```
