@@ -226,39 +226,41 @@ Main function :
 Main <-
   function(endpoint = 1,
            limit = NULL,
-           field = NULL,
-           value = NULL,
+           operator = NULL,
            date.start = NULL,
            date.end = NULL,
-           operator = NULL, 
-           disaster = NULL,
-           ascending.date = TRUE,
-           ascending.title = TRUE,
+           ascending.date = NULL,
+           ascending.title = NULL,
            exact.match = FALSE,
            country = NULL,
-           status = NULL
+           disaster = NULL,
+           field = NULL,
+           value = NULL
            ) {
     
-  # DEBUG : 
-  # Pan to debug function
-  # - Fix intern variables : 
-            endpoint = 1
-            limit = 50
-            field = c("title", "country")
-            value = c("water","france")
-            date.start = "2019-01-02"
-            date.end = "2020-01-02"
-            ascending.date = TRUE
-            ascending.title = TRUE
-            exact.match = FALSE
-            operator = NULL
-            disaster = NULL
-            country = NULL
-            status = NULL
+  # DEBUG panel : exposes variables to run function from the inside. Uncomment if needed.
+  # - Set intern variables : 
+            # endpoint = 1
+            # limit = 50
+            # field = c("title", "country")
+            # value = c("water","france")
+            # date.start = "2019-01-02"
+            # date.end = "2020-01-02"
+            # ascending.date = TRUE
+            # ascending.title = TRUE
+            # exact.match = FALSE
+            # operator = NULL
+            # disaster = NULL
+            # country = NULL
     
-  # Ccall a request on the Relief Web aPI :
+  # 1. CALL REQUEST ON THE RELIEF WEB API :
   req = req_call(endpoint)
   
+  # 2. DEFINE [ENDPOINTS ; FIELDS] CORRESPONDENCE TABLE : 
+  # Each ENDPOINTs have it's own structure in the Relief Web API 
+  # (see "https://apidoc.reliefweb.int/fields-tables" for more).
+  # For this to be transparent to user, function needs to switch those on demande.
+  # RECALL : ENDPOINTs are to be chosen in a list, same as following :
    endpoints = c(
     "reports",
     "disasters",
@@ -269,6 +271,8 @@ Main <-
     "blog",
     "book"
   )
+   
+  # Thus the corresponding fields-table for TITLE/NAME :  
    fields = c(
     "title", # reports
     "name",  # disasters
@@ -280,7 +284,9 @@ Main <-
     "title"  # "book",
   )
    
-   # LIMIT argument (if not given in arg. se limit in IF method) :
+   # 3. PARAMETRISATION : 
+   # Conversation with API goes through URLs. First strep is to create each parameter code.
+   # - LIMIT argument (if not given in arg. se limit in IF method) :
    if (is.null(limit) == TRUE | is.numeric(limit) == TRUE) {
      limit1 <-
        ifelse(is.null(limit) == TRUE,
@@ -288,12 +294,12 @@ Main <-
               paste0("&limit=", limit))
    }
    
-   # OPERATOR (given only once) :
+   # - OPERATOR (given only once) :
    if (!is.null(operator)) {
      operator = capture.output(cat("query[operator]=", operator, sep = ""))
    }
    
-   # DATE.START argument
+   # - DATE.START argument
    if (is.null(date.start) == TRUE |
        is.character(date.start) == TRUE) {
      date.start1 <- ifelse(
@@ -302,12 +308,10 @@ Main <-
        paste0(
          "&filter[field]=date&filter[value][from]=",
          date.start,
-         "T00:00:00%2B00:00"
-       )
-     )
+         "T00:00:00%2B00:00"))
    }
    
-   # DATE.END argument
+   # - DATE.END argument
    if (is.null(date.end) == TRUE | is.character(date.end) == TRUE) {
      date.end1 <- ifelse(
        is.null(date.end) == TRUE,
@@ -315,41 +319,28 @@ Main <-
        paste0(
          "&filter[field]=date&filter[value][to]=",
          date.end,
-         "T00:00:00%2B00:00"
-       )
-     )
+         "T00:00:00%2B00:00"))
    }
    
-   # ASCENDING DATE argument
+   # - ASCENDING DATE argument
    if (is.logical(ascending.date) == TRUE) {
      ascending1 <-
-       ifelse(ascending == FALSE, "&sort[]=date:desc", "&sort[]=date:asc")
+       ifelse(ascending.date == FALSE, "&sort[]=date:desc", "&sort[]=date:asc")
    }
    
-   # ASCENDING TITLE argument
+   # - ASCENDING TITLE argument
    if (is.logical(ascending.title) == TRUE) {
      ascending1 <-
        ifelse(
-         ascending == FALSE,
+         ascending.title == FALSE,
          paste0("&sort[]=", fields[endpoint], ":desc"),
          paste0("&sort[]=", fields[endpoint], ":asc")
        )
    }
    
-   # disaster argument
-   if (is.null(disaster) == TRUE | is.character(disaster) == TRUE) {
-     disaster1 <- ifelse(is.null(disaster) == TRUE,
-                         "",
-                         paste0("&query[value]=type:", paste(
-                           gsub("\\s{1}", "%", disaster), collapse = "|"
-                         )))
-   }
-   
-   # exact.match argument
+   # - Exact.match argument
    if ((
-     is.character(disaster) == TRUE |
-     is.character(country) == TRUE | is.character(status) == TRUE
-   )) {
+     is.character(disaster) == TRUE | is.character(country) == TRUE )) {
      if (is.logical(exact.match) == TRUE) {
        exact.match1 <- ifelse(exact.match == FALSE,
                               "&query[operator]=OR",
@@ -357,7 +348,7 @@ Main <-
      }
    }
    
-   # Country argument :
+   # - Country argument :
    if (is.null(country) == TRUE | is.character(country) == TRUE) {
      country1 <- ifelse(is.null(country) == TRUE,
                         "",
@@ -366,7 +357,16 @@ Main <-
                         ), collapse = "|")))
    }
    
-   # In this version, VALUES and FIELDS are PAIRED :  MUST be  TWO VECTORS of the SAME SIZE :
+    # - Disaster argument
+   if (is.null(disaster) == TRUE | is.character(disaster) == TRUE) {
+     disaster1 <- ifelse(is.null(disaster) == TRUE,
+                         "",
+                         paste0("&query[value]=type:", paste(
+                           gsub("\\s{1}", "%", disaster), collapse = "|")))
+   }
+   
+   # - ARGUMENTS TO QUERY :
+   # CAUTION : In this version, VALUES and FIELDS are PAIRED :  MUST be  TWO VECTORS of the SAME SIZE :
    # EXAMPLE : to search for two words in the same field (here "title"), see
    # Main(...,field = c("title, "title"),value = c("word_1", "word_2"), )
    values = c()
@@ -379,29 +379,35 @@ Main <-
      }
    }
    
-  # Get RELIEFWEB - API-URL and add PARAMETEERS (Makes a "Kickstart"): 
+  # 4. Add PARAMETEERS to RELIEF WEB - API-URL :
+  # Makes a "Kickstart" with individual concatenated parametric codes.
+  # - Each line verifying argument existence before concatenation.
     kickstart = paste0(limit1)
-    kickstart = ifelse(!is.null(ascending1),capture.output(cat(kickstart,ascending1,sep = "")),kickstart)
-    kickstart = ifelse(!is.null(country1),capture.output(cat(kickstart,country1,sep = "")),kickstart)
-    kickstart = ifelse(!is.null(date.start1),capture.output(cat(kickstart,date.start1,sep = "")),kickstart)
-    kickstart = ifelse(!is.null(date.end1),capture.output(cat(kickstart,date.end1,sep = "")),kickstart)
-    kickstart = ifelse(!is.null(disaster1),capture.output(cat(kickstart,disaster1,sep = "")),kickstart)
+    kickstart = ifelse(exists("ascending1"),capture.output(cat(kickstart,ascending1,sep = "")),kickstart)
+    kickstart = ifelse(exists("country1"),capture.output(cat(kickstart,country1,sep = "")),kickstart)
+    kickstart = ifelse(exists("date.start1"),capture.output(cat(kickstart,date.start1,sep = "")),kickstart)
+    kickstart = ifelse(exists("date.end1"),capture.output(cat(kickstart,date.end1,sep = "")),kickstart)
+    kickstart = ifelse(exists("disaster1"),capture.output(cat(kickstart,disaster1,sep = "")),kickstart)
     kickstart = ifelse(exists("exact.match1"),capture.output(cat(kickstart,country1,sep = "")),kickstart)
+
+  # - Then, concatenation with [API-url + endpoint-code] :
     kickstart = paste0(req$url,kickstart)
-  # Add to the KICKSTART the [KEY WORDS ; FIELDS] for research 
-  # RECALL : words and fields a to give by couple. Have to be presented as equaly sized VECTOR 
+    
+  # - Then qdd to the KICKSTART the code for every [KEY WORDS ; FIELDS] couples. 
+  # RECALL : words and fields a to give by couple. Have to be presented as equaly sized VECTOR
   if(!is.null(values)){
     # vectors are of the form : 
     # ["query[fields][]=.........." ; ""query[value]=.........."]
     temp = capture.output(cat(values,sep = "&"))
     # temp = capture.output(cat(temp,operator,sep = "&"))
     # arranged in the form : [.................]
+    # - Then concatenate QUERY-parametric code to KICKSTART
+    temp = capture.output(cat("&",temp,sep = ""))
+    temp = capture.output(cat(kickstart,temp,sep=""))
   }else{
+    # - If no QUERY-argument, let the KICKSTART be
     temp=kickstart
   }
-    temp = capture.output(cat("&",temp,sep = ""))
-    
-    temp = capture.output(cat(kickstart,temp,sep=""))
     
   # Print URL for debugging :
   print(temp)
@@ -437,15 +443,15 @@ For more informations on *"parameters"* for this API, you may want to loog the o
 ##Examples :
 
 ```{r EXAMPLE_1, echo=TRUE}
-endpoint = 2
-value = c("water")
+endpoint = 1
+value = c("flood")
 field = c("name")
 # operator = "AND"
 
 # Simple request :
 # res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
 # With DATE START :
-res = Main(endpoint = endpoint,limit = 10,date.start = "2020-01-02",ascending.title = TRUE,ascending.date = FALSE)
+res = Main(endpoint = endpoint,limit = 10, ascending.date = TRUE)
 ```
 
 
