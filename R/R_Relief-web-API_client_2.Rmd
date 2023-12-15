@@ -231,7 +231,9 @@ Main <-
            date.start = NULL,
            date.end = NULL,
            operator = NULL, 
-           disaster = NULL) {
+           disaster = NULL,
+           country = NULL
+           ) {
     
   # Ccall a request on the Relief Web aPI :
   req = req_call(endpoint)
@@ -331,6 +333,14 @@ Main <-
       call. = FALSE
     )
   }
+  
+  # Country argument :
+  if(!is.null(country)==TRUE &
+     is.character(country)==TRUE) {
+    country1 <- paste0("&filter[field]=country:", paste(gsub(
+                         "\\s{1}", "%", country
+                       ), collapse = "|"))}
+  
   # Get RELIEFWEB - API-URL and add PARAMETEERS (Makes a "Kickstart"): 
     kickstart = paste0(req$url,limit1)
     kickstart = paste0(kickstart,date.start1)
@@ -417,7 +427,7 @@ res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.star
 
 endpoint = 1
 limit = 20
-value = c("cuba")
+value = c("cod")
 # RECALL : field must correspond to result structure (see Relief Web API) :
 # Either :
 field = c("title")
@@ -439,7 +449,7 @@ res = Main(
   date.start = date.start
 )
 
-numero = 17
+numero = 1
 
 toto = PRINT_SEARCH(res = res,numero = numero,namefile = "test_1",txt = TRUE,html = TRUE)
 
