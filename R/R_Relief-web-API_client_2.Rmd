@@ -73,7 +73,7 @@ Returns a REQUEST which is to enrich with *"parameters"*.
 Beware of parentheses in multi-arguments calls for URL management seek.
 
 ```{r SUMMARY,echo=TRUE}
-res_summary <- function(res, field, lim = 100){
+res_summary <- function(res, type){
 # - input : { Resultat after JSon extract [res] ; The field to print in final list [field]}
 # - output : a list of fields from objects extracted by [res]
 
@@ -92,9 +92,24 @@ fields = c(
     "title", # "blog",
     "title"  # "book",
   )
+types = c(
+    "reports",
+    "disasters",
+    "countries",
+    "jobs",
+    "training",
+    "sources",
+    "blog",
+    "book"
+  )
+
+Param_table = cbind(fields,types)
+x = Param_table[,2] == type
+field = Param_table[x,1]
+
 eval(parse(text = paste("
-for(i in seq(1,lim)){
-print(paste0(i,\" -> \",res$data[i][[1]]$fields$",fields[field],"))}",sep="")))
+for(i in seq(1,res$count)){
+print(paste0(i,\" -> \",res$data[i][[1]]$fields$",field,"))}",sep="")))
 }
 ```
 
@@ -142,13 +157,13 @@ PRINT_SEARCH = function(res,
   lapply(res$data,function(x){x$fields$name})
   
   # Request URL :
-  url = res$data[[numero]]$href
-  req = request(url)
-  
-  resp = resp_body_json(req_perform(req))
-  print(url)
+  url  = res$data[[numero]]$href
+  req  = request(url)
+  resp = req_perform(req)
+  resp = resp_body_json(resp)
   
   # Print resource to txt file :
+  if(!is.null(txt)){
   sink(
     file = paste0(
       "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/Logs/",
@@ -158,11 +173,15 @@ PRINT_SEARCH = function(res,
     append = FALSE,
     type = c("output")
   )
-  print(resp)
+  print(resp$data[[1]]$fields$title)
+  # print(resp$data[[1]]$fields$name)
+  # print(resp$data[[1]]$fields$description)
+  print(resp$data[[1]]$fields$body)
   sink()
+  }
   
  # Print resource as HTML : 
-  if(html==TRUE){
+  if(!is.null(html)){
     sink(
     file = paste0(
       "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/HTML/",
@@ -172,12 +191,13 @@ PRINT_SEARCH = function(res,
     append = FALSE,
     type = c("output")
   )
+  print(resp$data[[1]]$fields$`description-html`)
   print(resp$data[[1]]$fields$`body-html`)
   sink()
   }
   
   # Save pdf file :
-  if (pdf == TRUE) {
+  if (!is.null(pdf)) {
     req_perform(
       request(resp$data[[1]]$fields$file[[1]]$url),
       path = paste0(
@@ -384,24 +404,31 @@ res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.star
 # Forge request :
 # res = Main(endpoint = 1,limit = 20, field = c("title","title"), value = c("gaza","health"),operator = "AND")
 
-endpoint = 2
-value = c("Guinea")
+endpoint = 1
+limit = 20
+value = c("gaza")
+# RECALL : field must correspond to result structure (see Relief Web API) :
+# Either :
 field = c("title")
+# Either :
+# field = c("name")
+# Paramatrisation : 
 operator = "AND"
+date.start = "2020-01-02"
+date.end = "2020-01-02"
 
 # Simple request parameters :
 # res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
-
 res = Main(
-  endpoint = 1,
-  limit = 50,
+  endpoint = endpoint,
+  limit = limit,
   field = field,
   value = value,
   # disaster = "storm",
-  date.start = "2020-01-02"
+  date.start = date.start
 )
 
-numero = 2
+numero = 17
 
 toto = PRINT_SEARCH(res = res,numero = numero,namefile = "test_1",pdf = TRUE,txt = FALSE,html = TRUE)
 
