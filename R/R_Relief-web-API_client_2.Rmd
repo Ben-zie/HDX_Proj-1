@@ -1,8 +1,9 @@
 --- 
-title: "R_http-API_client_1"
+title: "R http API client 1"
 author: "Benjamin DAUTRIF"
 date: "2023-10-27"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 ---
@@ -32,6 +33,36 @@ knitr::opts_chunk$set(echo = TRUE)
 library("httr2")
 # Load the package required to read JSON files.
 library("rjson")
+
+# DEFINE [ENDPOINTS ; FIELDS] CORRESPONDENCE TABLE : 
+# Each ENDPOINTs have it's own structure in the Relief Web API 
+# (see "https://apidoc.reliefweb.int/fields-tables" for more).
+# For this to be transparent to user, function needs to switch those on demande.
+# RECALL : ENDPOINTs are to be chosen in a list, same as following :
+endpoints = c(
+    "reports",
+    "disasters",
+    "countries",
+    "jobs",
+    "training",
+    "sources",
+    "blog",
+    "book"
+  )
+   
+# Thus the corresponding fields-table for TITLE/NAME :  
+fields = c(
+    "title", # reports
+    "name",  # disasters
+    "name",  # "countries",
+    "title", # "jobs",
+    "title", # "training",
+    "name",  # "sources",
+    "title", # "blog",
+    "title"  # "book",
+  )
+
+Param_table = cbind(fields,endpoints)
 ```
 
 # Variables definition :
@@ -46,20 +77,11 @@ For more information on parameters, see [API documentation]("https://apidoc.rwla
 
 **1.** : calls API url and defines *"endpoint"*
 
-```{r REQUEST, echo=TRUE}
-req_call <- function(var_endpoint){
-  endpoints = c(
-    "reports",
-    "disasters",
-    "countries",
-    "jobs",
-    "training",
-    "sources",
-    "blog",
-    "book"
-  )
+```{r REQUESTING, echo=TRUE}
+req_call <- function(endpoint){
+  
   req = request("https://api.reliefweb.int/v1/")
-  req = req_url_path_append(req, endpoints[var_endpoint])
+  req = req_url_path_append(req, endpoints[endpoint])
   req$url = paste0(req$url,"?appname=R_HDX_client_2")
   
   return(req)
@@ -72,38 +94,17 @@ Returns a REQUEST which is to enrich with *"parameters"*.
 
 Beware of parentheses in multi-arguments calls for URL management seek.
 
-```{r SUMMARY,echo=TRUE}
+```{r SUMMARYING,echo=TRUE}
 res_summary <- function(res, type){
-# - input : { Resultat after JSon extract [res] ; The field to print in final list [field]}
-# - output : a list of fields from objects extracted by [res]
 
-# SUMMARY (depending on types as ENDPOINT, due to different API structures ; see API) : 
-  # Example :
-  # - endpoint = 1 -> reports -> title
-  # - endpoint = 2 -> disasters -> name
+  # - input : { Resultat after JSon extract [res] ; The field to print in final list [field]}
+  # - output : a list of fields from objects extracted by [res]
   
-fields = c(
-    "title", # reports
-    "name",  # disasters
-    "name",  # "countries",
-    "title", # "jobs",
-    "title", # "training",
-    "name",  # "sources",
-    "title", # "blog",
-    "title"  # "book",
-  )
-types = c(
-    "reports",
-    "disasters",
-    "countries",
-    "jobs",
-    "training",
-    "sources",
-    "blog",
-    "book"
-  )
-
-Param_table = cbind(fields,types)
+  # SUMMARY (depending on types as ENDPOINT, due to different API structures ; see API) : 
+    # Example :
+    # - endpoint = 1 -> reports -> title
+    # - endpoint = 2 -> disasters -> name
+    
 x = Param_table[,2] == type
 field = Param_table[x,1]
 
@@ -115,7 +116,7 @@ print(paste0(i,\" -> \",res$data[i][[1]]$fields$",field,"))}",sep="")))
 
 **3.** Get specific FIELD in specific resource and see on web :
 
-```{r COLLECT,echo=TRUE}
+```{r COLLECTING,echo=TRUE}
 COLLECT_SEARCH = function(res) {
   # Objectif : print a summary according to given FIELD
   # Input : a result-pool 
@@ -145,14 +146,19 @@ COLLECT_SEARCH = function(res) {
 }
 ```
 
-```{r PRINT,echo=TRUE}
+```{r PRINTING,echo=TRUE}
 PRINT_SEARCH = function(res,
                         numero,
                         namefile,
+                        endpoint,
                         txt = NULL,
                         html = NULL,
                         pdf = NULL) {
-  
+
+  # Get specific ENDPOINT item :
+  x = Param_table[,2] == endpoints[endpoint]
+  field = Param_table[x,1]
+
   # Menu results : 
   lapply(res$data,function(x){x$fields$name})
   
@@ -164,27 +170,34 @@ PRINT_SEARCH = function(res,
   
   # Print resource to txt file :
   if(!is.null(txt)){
-  sink(
-    file = paste0(
-      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/Logs/",
-      namefile,
-      ".txt"
-    ),
-    append = FALSE,
-    type = c("output")
-  )
-  print(resp$data[[1]]$fields$title)
+  # sink(
+  #   file = paste0(
+  #     "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/Logs/",
+  #     namefile,
+  #     ".txt"
+  #   ),
+  #   append = FALSE,
+  #   type = c("output")
+  # )
+  ifelse(endpoint == 1,
+      req_perform(
+      request(res$data[[1]]$href),
+          path = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/",namefile)),
+  ifelse(endpoint == 2,
+      resp$data[[1]]$fields$description,
+      "autre type de document..."
+  ))
   # print(resp$data[[1]]$fields$name)
   # print(resp$data[[1]]$fields$description)
   print(resp$data[[1]]$fields$body)
-  sink()
+  # sink()
   }
   
  # Print resource as HTML : 
   if(!is.null(html)){
     sink(
     file = paste0(
-      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/HTML/",
+      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/HTML/",
       namefile,
       ".html"
     ),
@@ -199,11 +212,10 @@ PRINT_SEARCH = function(res,
   # Save pdf file :
   if (!is.null(pdf)) {
     req_perform(
-      request(resp$data[[1]]$fields$file[[1]]$url),
+      request(resp$data[[1]]$fields$url),
       path = paste0(
-        "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/PDF/",
-        namefile,
-        ".pdf"
+        "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/PDF/",
+        namefile
       )
     )
   }
@@ -221,146 +233,184 @@ PRINT_SEARCH = function(res,
 
 Main function :  
 
-```{r Main, echo=TRUE}
+```{r MAIN, echo=TRUE}
 # Perform a request that covers multi-arguments and operators :
 Main <-
-  function(endpoint = 1,
+  function(endpoint = NULL,
            limit = NULL,
-           field = NULL,
-           value = NULL,
+           operator = NULL,
            date.start = NULL,
            date.end = NULL,
-           operator = NULL, 
+           ascending.date = NULL,
+           ascending.title = NULL,
+           exact.match = FALSE,
+           country = NULL,
            disaster = NULL,
-           country = NULL
+           field = NULL,
+           value = NULL
            ) {
     
-  # Ccall a request on the Relief Web aPI :
-  req = req_call(endpoint)
-  
-   endpoints = c(
-    "reports",
-    "disasters",
-    "countries",
-    "jobs",
-    "training",
-    "sources",
-    "blog",
-    "book"
-  )
-   
-  # LIMIT argument (if not given in arg. se limit in IF method) :
-  
-  if (is.null(limit) == TRUE | is.numeric(limit) == TRUE) {
-    limit1 <-
-      ifelse(is.null(limit) == TRUE,
-             "&limit=100",
-             paste0("&limit=", limit))
-  } else{
-    stop(
-      "The argument 'limit' requires a NULL or numeric value.",
-      call. = FALSE
-    )
-  }
-  
-  # In this version, VALUES and FIELDS are PAIRED :  MUST be  TWO VECTORS of the SAME SIZE : 
-  # EXAMPLE : to search for two words in the same field (here "title"), see 
-  # Main(...,field = c("title, "title"),value = c("word_1", "word_2"), )
-  values = c()
-  for(i in seq(1,length(value))){
-    if(!is.null(field[i])){
-      values = append(values, capture.output(cat("query[fields][]=",field[i],sep = "")))
-    }
-    if(!is.null(value[i])){
-      values = append(values, capture.output(cat("query[value]=",value[i],sep = "")))
-    }
-  }
-  # OPERATOR (given only once) : 
-  if(!is.null(operator)){
-      operator = capture.output(cat("query[operator]=",operator,sep = ""))
-  }
-  
-  # DATE.START argument
-  if (is.null(date.start) == TRUE |
-      is.character(date.start) == TRUE) {
-    date.start1 <- ifelse(
-      is.null(date.start) == TRUE,
-      "",
-      paste0(
-        "&filter[field]=date&filter[value][from]=",
-        date.start,
-        "T00:00:00%2B00:00"
-      )
-    )
-  } else{
-    stop(
-      "The argument 'date.start' must be set to NULL (no restriction on sample start date) or
-      requires a character string in the format 'yyyy-mm-dd'.",
-      call. = FALSE
-    )
-  }
-  
-  # DATE.END argument
-  if (is.null(date.end) == TRUE | is.character(date.end) == TRUE) {
-    date.end1 <- ifelse(
-      is.null(date.end) == TRUE,
-      "",
-      paste0(
-        "&filter[field]=date&filter[value][to]=",
-        date.end,
-        "T00:00:00%2B00:00"
-      )
-    )
-  } else{
-    stop(
-      "The argument 'date.end' must be set to NULL (no restriction on sample end date) or
-      requires a character string in the format 'yyyy-mm-dd'.",
-      call. = FALSE
-    )
-  }
+  # DEBUG panel : exposes variables to run function from the inside. Uncomment if needed.
+  # - Set intern variables : 
+            # endpoint = 1
+            # limit = 50
+            # field = c("title", "country")
+            # value = c("water","france")
+            # date.start = "2019-01-02"
+            # date.end = "2020-01-02"
+            # ascending.date = TRUE
+            # ascending.title = TRUE
+            # exact.match = FALSE
+            # operator = NULL
+            # disaster = NULL
+            # country = NULL
 
-   # disaster argument
-  if(is.null(disaster)==TRUE |
-     is.character(disaster)==TRUE) {
-    disaster1 <- ifelse(is.null(disaster) == TRUE,
+   # 1. CALL REQUEST ON THE RELIEF WEB API :
+   req = req_call(endpoint)
+   
+   # 2. PARAMETRISATION : 
+   # Conversation with API goes through URLs. First strep is to create each parameter code.
+   # - LIMIT argument (if not given in arg. se limit in IF method) :
+   if (is.null(limit) == TRUE | is.numeric(limit) == TRUE) {
+     limit1 <-
+       ifelse(is.null(limit) == TRUE,
+              "&limit=100",
+              paste0("&limit=", limit))
+   }
+   
+   # - OPERATOR (given only once) :
+   if (!is.null(operator)) {
+     operator1 = capture.output(cat("query[operator]=", operator, sep = ""))
+   }
+   
+   # - DATE.START argument
+   if (is.null(date.start) == TRUE |
+       is.character(date.start) == TRUE) {
+     date.start1 <- ifelse(
+       is.null(date.start) == TRUE,
+       "",
+       paste0(
+         "&filter[field]=date&filter[value][from]=",
+         date.start,
+         "T00:00:00%2B00:00"))
+   }
+   
+   # - DATE.END argument
+   if (is.null(date.end) == TRUE | is.character(date.end) == TRUE) {
+     date.end1 <- ifelse(
+       is.null(date.end) == TRUE,
+       "",
+       paste0(
+         "&filter[field]=date&filter[value][to]=",
+         date.end,
+         "T00:00:00%2B00:00"))
+   }
+   
+   # - ASCENDING DATE argument
+   if (is.logical(ascending.date) == TRUE) {
+     ascending1 <-
+       ifelse(ascending.date == FALSE, "&sort[]=date:desc", "&sort[]=date:asc")
+   }
+   
+   # - ASCENDING TITLE argument
+   if (is.logical(ascending.title) == TRUE) {
+     ascending1 <-
+       ifelse(
+         ascending.title == FALSE,
+         paste0("&sort[]=", fields[endpoint], ":desc"),
+         paste0("&sort[]=", fields[endpoint], ":asc")
+       )
+   }
+   
+   # - Exact.match argument
+   if ((
+     is.character(disaster) == TRUE | is.character(country) == TRUE )) {
+     if (is.logical(exact.match) == TRUE) {
+       exact.match1 <- ifelse(exact.match == FALSE,
+                              "&query[operator]=OR",
+                              "&query[operator]=AND")
+     }
+   }
+   
+   # - Country argument :
+   if (is.null(country) == TRUE | is.character(country) == TRUE) {
+     country1 <- ifelse(is.null(country) == TRUE,
                         "",
-                        paste0("query[value]=type:", paste(
-                          gsub("\\s{1}", "%", disaster), collapse = "|"
-                        )))
-  } else{
-    stop(
-      "The argument 'disaster' requires a character vector of disaster types to be queried, or        is set to NULL.",
-      call. = FALSE
-    )
-  }
+                        paste0("&filter[field]=country:", paste(gsub(
+                          "\\s{1}", "%", country
+                        ), collapse = "|")))
+   }
+   
+    # - Disaster argument
+   if (is.null(disaster) == TRUE | is.character(disaster) == TRUE) {
+     disaster1 <- ifelse(is.null(disaster) == TRUE,
+                         "",
+                         paste0("&query[value]=type:", paste(
+                           gsub("\\s{1}", "%", disaster), collapse = "|")))
+   }
+   
+   # - FORMATING  (query) ARGUMENTS :
+   # CAUTION : In this version, VALUES and FIELDS are PAIRED :  MUST be  TWO VECTORS of the SAME SIZE :
+   # EXAMPLE : to search for two words in the same field (here "title"), see
+   # Main(...,field = c("title, "title"),value = c("word_1", "word_2"), )
+   # Debug panel : 
+     # value = c("gaza","health")
+     # field = c("title","title")
+     # operator = c("AND")
   
-  # Country argument :
-  if(!is.null(country)==TRUE &
-     is.character(country)==TRUE) {
-    country1 <- paste0("&filter[field]=country:", paste(gsub(
-                         "\\s{1}", "%", country
-                       ), collapse = "|"))}
-  
-  # Get RELIEFWEB - API-URL and add PARAMETEERS (Makes a "Kickstart"): 
-    kickstart = paste0(req$url,limit1)
-    kickstart = paste0(kickstart,date.start1)
-    kickstart = paste0(kickstart,date.end1)
-  # Add to the KICKSTART the [KEY WORDS ; FIELDS] for research 
-  # RECALL : words and fields a to give by couple. Have to be presented as equaly sized VECTOR 
-  if(!is.null(values)){
+   field1 = c()
+   value1 = c()
+   operator1 = c()
+   for (i in seq(1, length(value))) {
+     if (!is.null(field[i])) {
+       field1 = append(field1, capture.output(cat("query[fields][]=", field[i], sep = "")))
+     }
+     if (!is.null(value[i])) {
+       value1 = append(value1, capture.output(cat("query[value]=", value[i], sep = "")))
+     }
+   }
+   if (!is.null(operator)) {
+       operator1 = capture.output(cat("query[operator]=", operator, sep = ""))
+     }
+   
+  # 4. Add PARAMETEERS to RELIEF WEB - API-URL :
+  # Makes a "Kickstart" with individual concatenated parametric codes.
+  # - Each line verifying argument existence before concatenation.
+    kickstart = paste0(limit1)
+    kickstart = ifelse(exists("ascending1"),capture.output(cat(kickstart,ascending1,sep = "")),kickstart)
+    kickstart = ifelse(exists("country1"),capture.output(cat(kickstart,country1,sep = "")),kickstart)
+    kickstart = ifelse(exists("date.start1"),capture.output(cat(kickstart,date.start1,sep = "")),kickstart)
+    kickstart = ifelse(exists("date.end1"),capture.output(cat(kickstart,date.end1,sep = "")),kickstart)
+    kickstart = ifelse(exists("disaster1"),capture.output(cat(kickstart,disaster1,sep = "")),kickstart)
+    kickstart = ifelse(exists("exact.match1"),capture.output(cat(kickstart,country1,sep = "")),kickstart)
+
+  # - Then, concatenation with [API-url + endpoint-code] :
+    kickstart = paste0(req$url,kickstart)
+    
+  # - Then qdd to the KICKSTART the code for every [KEY WORDS ; FIELDS] couples. 
+  # RECALL : words and fields a to give by couple. Have to be presented as equaly sized VECTOR
+  if(!is.null(field1) & !is.null(value1)){
     # vectors are of the form : 
     # ["query[fields][]=.........." ; ""query[value]=.........."]
-    temp = capture.output(cat(values,sep = "&"))
-    temp = capture.output(cat(temp,operator,sep = "&"))
-    temp = capture.output(cat(temp,disaster1,sep = "&"))
-    temp = capture.output(cat("&",temp,sep = ""))
-    temp = capture.output(cat(kickstart,temp,sep=""))
+    # CAUTION : "fields" and "values" are PAIRED, so their vectors MUST have same length
+    temp_params = paste(field1,value1,sep = "&")
+    temp_params = capture.output(cat(temp_params,sep = "&"))
+    # Operator (for now) is just to be passed once
+    temp =        capture.output(cat(temp_params,operator1,sep = "&"))
+
+    # temp = capture.output(cat(temp,operator,sep = "&"))
     # arranged in the form : [.................]
+    # - Then concatenate QUERY-parametric code to KICKSTART
+    # -- at first add a API specific symbole "&" for arguments concatenation
+    temp = capture.output(cat("&",temp,sep = ""))
+    # -- then concatenate KICKSTART with ARGUMENTS
+    temp = capture.output(cat(kickstart,temp,sep=""))
   }else{
+    # - If no QUERY-argument, let the KICKSTART be
     temp=kickstart
   }
     
-  # Print URL for debugging :
+  # Print URL :
   print(temp)
   
   # PERFORM REQUEST :
@@ -391,33 +441,38 @@ Main <-
 
 For more informations on *"parameters"* for this API, you may want to loog the online documentation. The **3rd** function *summarize* the results in a sized list : 
 
-##Examples :
+## Examples :
 
-```{r EXAMPLE_1, echo=TRUE}
-endpoint = 2
-value = c("Guinea")
+```{r EXAMPLE 1, echo=TRUE}
+endpoint = 1
+value = c("flood")
 field = c("name")
 # operator = "AND"
 
 # Simple request :
 # res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
 # With DATE START :
-res = Main(endpoint = endpoint,limit = 10,field = field,value = value,disaster = "storm",date.start = "2020-01-02")
+res = Main(endpoint = endpoint,limit = 10, ascending.date = TRUE)
 ```
 
 
-```{r EXAMPLE_2, echo=TRUE}
+```{r EXAMPLE 2, echo=TRUE}
 endpoint = 2
-value = c("storm","hurrican")
+value = c("cuba","storm")
 field = c("name","name")
-operator = "AND"
+# operator = "OR"
 
 # Simple request :
 # res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
 # With DATE START :
-res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.start = "2019-01-02",operator = operator)
-
-# res = Main(endpoint = 6,limit = 10,field = c("name"),value = c("congo"))
+res = Main(
+  endpoint = endpoint,
+  limit = 100,
+  field = field,
+  value = value,
+  ascending.date = FALSE,
+  operator = "OR"
+)
 
 ```
 
@@ -426,15 +481,15 @@ res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.star
 # res = Main(endpoint = 1,limit = 20, field = c("title","title"), value = c("gaza","health"),operator = "AND")
 
 endpoint = 1
-limit = 20
-value = c("cod")
+limit = 100
+value = c("WHO", "congo")
 # RECALL : field must correspond to result structure (see Relief Web API) :
 # Either :
-field = c("title")
+field = c("title", "title")
 # Either :
 # field = c("name")
-# Paramatrisation : 
-operator = "AND"
+# Paramatrisation :
+# operator = "AND"
 date.start = "2020-01-02"
 date.end = "2020-01-02"
 
@@ -449,22 +504,25 @@ res = Main(
   date.start = date.start
 )
 
-numero = 1
+numero = 68
 
-toto = PRINT_SEARCH(res = res,numero = numero,namefile = "test_1",txt = TRUE,html = TRUE)
+test_1 = PRINT_SEARCH(
+  res = res,
+  numero = numero,
+  endpoint = endpoint,
+  namefile = "test_2",
+  txt = TRUE,
+  html = TRUE,
+  pdf = TRUE
+)
 
-# PRINT_SEARCH = function(res,numero,namefile){
-# # Menu results : 
-# lapply(res$data,function(x){x$fields$name})
-# # Request URL :
-# url = res$data[[numero]]$href
-# req = request(url)
-# print(url)
-# # Print resource information from RESQUEST to FILE :
-# sink(file = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/Logs/",namefile,".txt"), append = FALSE, type = c("output"))
-# print(resp_body_json(req_perform(req)))
-# sink()
-# browseURL(url)
-# }
-#_______________________________________________________________________________
+# Request collections :
+
+# Search for epidemiologic events for DENGUE disease, chronologicaly ordered :
+# x = Main(endpoint = 2,ascending.date = FALSE,disaster = "Epidemic", value = c("Dengue"),field = c("name"))
+# res_summary(x,type = "disasters")
+
+# Search for latest REPORTS with WHO in their title :
+# x = Main(endpoint = 1,limit = 50,ascending.date = FALSE, value = c("WHO"),field = c("title"))
+# res_summary(x,type = "reports")
 ```
