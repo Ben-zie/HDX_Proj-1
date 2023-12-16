@@ -450,15 +450,15 @@ For more informations on *"parameters"* for this API, you may want to loog the o
 ## Examples :
 
 ```{r EXAMPLE 1, echo=TRUE}
-endpoint = 1
+endpoint = 2
 value = c("flood")
 field = c("name")
-# operator = "AND"
+operator = "OR"
 
 # Simple request :
 # res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
 # With DATE START :
-res = Main(endpoint = endpoint,limit = 10, ascending.date = TRUE)
+res = Main(endpoint = endpoint,limit = 20, ascending.date = TRUE, field = field, value = value, operator = operator)
 ```
 
 
@@ -532,12 +532,9 @@ test_1 = PRINT_SEARCH(
 # x = Main(endpoint = 1,limit = 50,ascending.date = FALSE, value = c("WHO"),field = c("title"))
 # res_summary(x,type = "reports")
 
+```
 
-x = req_call(endpoint = 1)
-x = resp_body_json(req_perform(x), simplifyVector = TRUE)
-x = as.data.frame(x)
+```{r , echo=TRUE}
+res = Main(endpoint = 2,limit = 20,date.start = "2015-01-02",ascending.date = FALSE,value = c("Epidemic"),field = c("name"))
 
-res = Main(endpoint = 1,limit = 20,date.start = "2015-01-02",ascending.date = FALSE,value = c("Epidemic"),field = c("title"))
-
-x = resp_body_json(req_perform(request(res$data[11,"href"])),simplifyVector = TRUE)
 ```
