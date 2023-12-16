@@ -77,7 +77,7 @@ For more information on parameters, see [API documentation]("https://apidoc.rwla
 
 **1.** : calls API url and defines *"endpoint"*
 
-```{r REQUEST, echo=TRUE}
+```{r REQUESTING, echo=TRUE}
 req_call <- function(endpoint){
   
   req = request("https://api.reliefweb.int/v1/")
@@ -94,7 +94,7 @@ Returns a REQUEST which is to enrich with *"parameters"*.
 
 Beware of parentheses in multi-arguments calls for URL management seek.
 
-```{r SUMMARY,echo=TRUE}
+```{r SUMMARYING,echo=TRUE}
 res_summary <- function(res, type){
 
   # - input : { Resultat after JSon extract [res] ; The field to print in final list [field]}
@@ -116,7 +116,7 @@ print(paste0(i,\" -> \",res$data[i][[1]]$fields$",field,"))}",sep="")))
 
 **3.** Get specific FIELD in specific resource and see on web :
 
-```{r COLLECT,echo=TRUE}
+```{r COLLECTING,echo=TRUE}
 COLLECT_SEARCH = function(res) {
   # Objectif : print a summary according to given FIELD
   # Input : a result-pool 
@@ -146,7 +146,7 @@ COLLECT_SEARCH = function(res) {
 }
 ```
 
-```{r PRINT,echo=TRUE}
+```{r PRINTING,echo=TRUE}
 PRINT_SEARCH = function(res,
                         numero,
                         namefile,
@@ -236,7 +236,7 @@ Main function :
 ```{r MAIN, echo=TRUE}
 # Perform a request that covers multi-arguments and operators :
 Main <-
-  function(endpoint = 1,
+  function(endpoint = NULL,
            limit = NULL,
            operator = NULL,
            date.start = NULL,
@@ -264,7 +264,7 @@ Main <-
             # operator = NULL
             # disaster = NULL
             # country = NULL
-    
+
    # 1. CALL REQUEST ON THE RELIEF WEB API :
    req = req_call(endpoint)
    
@@ -280,7 +280,7 @@ Main <-
    
    # - OPERATOR (given only once) :
    if (!is.null(operator)) {
-     operator = capture.output(cat("query[operator]=", operator, sep = ""))
+     operator1 = capture.output(cat("query[operator]=", operator, sep = ""))
    }
    
    # - DATE.START argument
@@ -349,19 +349,29 @@ Main <-
                            gsub("\\s{1}", "%", disaster), collapse = "|")))
    }
    
-   # - ARGUMENTS TO QUERY :
+   # - FORMATING  (query) ARGUMENTS :
    # CAUTION : In this version, VALUES and FIELDS are PAIRED :  MUST be  TWO VECTORS of the SAME SIZE :
    # EXAMPLE : to search for two words in the same field (here "title"), see
    # Main(...,field = c("title, "title"),value = c("word_1", "word_2"), )
-   values = c()
+   # Debug panel : 
+     # value = c("gaza","health")
+     # field = c("title","title")
+     # operator = c("AND")
+  
+   field1 = c()
+   value1 = c()
+   operator1 = c()
    for (i in seq(1, length(value))) {
      if (!is.null(field[i])) {
-       values = append(values, capture.output(cat("query[fields][]=", field[i], sep = "")))
+       field1 = append(field1, capture.output(cat("query[fields][]=", field[i], sep = "")))
      }
      if (!is.null(value[i])) {
-       values = append(values, capture.output(cat("query[value]=", value[i], sep = "")))
+       value1 = append(value1, capture.output(cat("query[value]=", value[i], sep = "")))
      }
    }
+   if (!is.null(operator)) {
+       operator1 = capture.output(cat("query[operator]=", operator, sep = ""))
+     }
    
   # 4. Add PARAMETEERS to RELIEF WEB - API-URL :
   # Makes a "Kickstart" with individual concatenated parametric codes.
@@ -379,21 +389,28 @@ Main <-
     
   # - Then qdd to the KICKSTART the code for every [KEY WORDS ; FIELDS] couples. 
   # RECALL : words and fields a to give by couple. Have to be presented as equaly sized VECTOR
-  if(!is.null(values)){
+  if(!is.null(field1) & !is.null(value1)){
     # vectors are of the form : 
     # ["query[fields][]=.........." ; ""query[value]=.........."]
-    temp = capture.output(cat(values,sep = "&"))
+    # CAUTION : "fields" and "values" are PAIRED, so their vectors MUST have same length
+    temp_params = paste(field1,value1,sep = "&")
+    temp_params = capture.output(cat(temp_params,sep = "&"))
+    # Operator (for now) is just to be passed once
+    temp =        capture.output(cat(temp_params,operator1,sep = "&"))
+
     # temp = capture.output(cat(temp,operator,sep = "&"))
     # arranged in the form : [.................]
     # - Then concatenate QUERY-parametric code to KICKSTART
+    # -- at first add a API specific symbole "&" for arguments concatenation
     temp = capture.output(cat("&",temp,sep = ""))
+    # -- then concatenate KICKSTART with ARGUMENTS
     temp = capture.output(cat(kickstart,temp,sep=""))
   }else{
     # - If no QUERY-argument, let the KICKSTART be
     temp=kickstart
   }
     
-  # Print URL for debugging :
+  # Print URL :
   print(temp)
   
   # PERFORM REQUEST :
@@ -424,7 +441,7 @@ Main <-
 
 For more informations on *"parameters"* for this API, you may want to loog the online documentation. The **3rd** function *summarize* the results in a sized list : 
 
-##Examples :
+## Examples :
 
 ```{r EXAMPLE 1, echo=TRUE}
 endpoint = 1
@@ -440,9 +457,9 @@ res = Main(endpoint = endpoint,limit = 10, ascending.date = TRUE)
 
 
 ```{r EXAMPLE 2, echo=TRUE}
-endpoint = 1
-value = c("cuba","hurrican")
-field = c("title","title")
+endpoint = 2
+value = c("cuba","storm")
+field = c("name","name")
 # operator = "OR"
 
 # Simple request :
@@ -452,8 +469,9 @@ res = Main(
   endpoint = endpoint,
   limit = 100,
   field = field,
-  value = value
-    
+  value = value,
+  ascending.date = FALSE,
+  operator = "OR"
 )
 
 ```
