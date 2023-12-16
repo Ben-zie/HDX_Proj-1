@@ -179,33 +179,39 @@ PRINT_SEARCH = function(res,
   #   append = FALSE,
   #   type = c("output")
   # )
-  ifelse(endpoint == 1,
-      req_perform(
-      request(res$data[[1]]$href),
-          path = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/",namefile)),
-  ifelse(endpoint == 2,
-      resp$data[[1]]$fields$description,
-      "autre type de document..."
+  resultat.txt =  ifelse(endpoint == 1,
+                    resp$data[[1]]$fields$body,
+                  ifelse(endpoint == 2,
+                    resp$data[[1]]$fields$description,
+                  "c'est autre chose"
   ))
-  # print(resp$data[[1]]$fields$name)
-  # print(resp$data[[1]]$fields$description)
-  print(resp$data[[1]]$fields$body)
-  # sink()
+  
+  sink(
+    file = paste0(
+      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/TXT/",
+      namefile,
+      ".txt"
+    ))
+    print(resultat.txt)
+  sink()
   }
   
  # Print resource as HTML : 
   if(!is.null(html)){
-    sink(
+
+  resultat.html =  ifelse(endpoint == 1,
+                      resp$data[[1]]$fields$`body-html`,
+                   ifelse(endpoint == 2,
+                      resp$data[[1]]$fields$`description-html`,
+                      "c'est autre chose"
+  ))
+  sink(
     file = paste0(
       "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/HTML/",
       namefile,
       ".html"
-    ),
-    append = FALSE,
-    type = c("output")
-  )
-  print(resp$data[[1]]$fields$`description-html`)
-  print(resp$data[[1]]$fields$`body-html`)
+    ))
+    print(resultat.html)
   sink()
   }
   
