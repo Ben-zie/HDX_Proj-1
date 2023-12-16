@@ -163,7 +163,7 @@ PRINT_SEARCH = function(res,
   lapply(res$data,function(x){x$fields$name})
   
   # Request URL :
-  url  = res$data[[numero]]$href
+  url  = res[numero,"data.href"]
   req  = request(url)
   resp = req_perform(req)
   resp = resp_body_json(resp)
@@ -217,21 +217,21 @@ PRINT_SEARCH = function(res,
   
   # Save pdf file :
   if (!is.null(pdf)) {
-    req_perform(
-      request(resp$data[[1]]$fields$url),
-      path = paste0(
-        "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/PDF/",
-        namefile
-      )
-    )
-  }
+  # Specify the URL of the file you want to download
+  url <- resp$data[[1]]$fields$file[[1]]$url
   
-  # sink(file = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/Logs/",namefile,"_pdf.txt"), append = FALSE, type = c("output"))
-  # if(pdf==TRUE){
-  # library(pdftools)
-  # pdftools::pdf_text(pdf = req$body)
-  # }
-  # sink()
+  # Specify the file name and location where you want to save the file on your computer
+  file_path <- "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/PDF/"
+  
+  # Call the download.file() function, passing in the URL and file name/location as arguments
+  download.file(url, paste(file_path, namefile,".pdf" , sep = ""), mode = "wb")
+  }    
+    # sink(file = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/Logs/",namefile,"_pdf.txt"), append = FALSE, type = c("output"))
+    # if(pdf==TRUE){
+    # library(pdftools)
+    # pdftools::pdf_text(pdf = req$body)
+    # }
+    # sink()
   
   return(resp_body_json(req_perform(req)))
 }
@@ -424,22 +424,22 @@ Main <-
   resp = req_perform(request)
   
   # JSON :
-  res = resp_body_json(resp)
-  
+  res = resp_body_json(resp, simplifyVector = TRUE)
+  res = as.data.frame(res)
   # INFOS : 
   print("for :")
-  print(res$href)
+  print(res$href[1])
   print("had :")
-  print(res$totalCount)
+  print(res$totalCount[1])
   print("got :")
-  print(res$count)
+  print(res$count[1])
 
   # SUMMARY (depending on types as ENDPOINT, due to different API structures ; see API) : 
   # Example :
   # - endpoint = 1 -> reports -> title
   # - endpoint = 2 -> disasters -> name
-  print(res_summary(res,type = endpoints[endpoint]))
-  
+  print(str(x,max.level = 2,vec.len = 0))
+  eval(parse(text = paste("print(res$data.fields$",fields[endpoint],")",sep = "")))
   # Return list of results :
   return(res)
 }
@@ -498,6 +498,7 @@ field = c("title", "title")
 # operator = "AND"
 date.start = "2020-01-02"
 date.end = "2020-01-02"
+namefile = "test_3"
 
 # Simple request parameters :
 # res = Main(endpoint = endpoint,limit = 100,field = field,value = value,date.start = )
@@ -510,16 +511,15 @@ res = Main(
   date.start = date.start
 )
 
-numero = 68
+numero = 14
 
 test_1 = PRINT_SEARCH(
   res = res,
   numero = numero,
   endpoint = endpoint,
-  namefile = "test_2",
+  namefile = namefile,
   txt = TRUE,
-  html = TRUE,
-  pdf = TRUE
+  html = TRUE
 )
 
 # Request collections :
@@ -531,4 +531,13 @@ test_1 = PRINT_SEARCH(
 # Search for latest REPORTS with WHO in their title :
 # x = Main(endpoint = 1,limit = 50,ascending.date = FALSE, value = c("WHO"),field = c("title"))
 # res_summary(x,type = "reports")
+
+
+x = req_call(endpoint = 1)
+x = resp_body_json(req_perform(x), simplifyVector = TRUE)
+x = as.data.frame(x)
+
+res = Main(endpoint = 1,limit = 20,date.start = "2015-01-02",ascending.date = FALSE,value = c("Epidemic"),field = c("title"))
+
+x = resp_body_json(req_perform(request(res$data[11,"href"])),simplifyVector = TRUE)
 ```
