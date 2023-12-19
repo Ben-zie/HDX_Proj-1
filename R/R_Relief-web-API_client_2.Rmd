@@ -38,6 +38,7 @@ library("rjson")
 # Each ENDPOINTs have it's own structure in the Relief Web API 
 # (see "https://apidoc.reliefweb.int/fields-tables" for more).
 # For this to be transparent to user, function needs to switch those on demande.
+# Thus the choice to give it as a global variable.
 # RECALL : ENDPOINTs are to be chosen in a list, same as following :
 endpoints = c(
     "reports",
@@ -49,7 +50,6 @@ endpoints = c(
     "blog",
     "book"
   )
-   
 # Thus the corresponding fields-table for TITLE/NAME :  
 fields = c(
     "title", # reports
@@ -61,7 +61,8 @@ fields = c(
     "title", # "blog",
     "title"  # "book",
   )
-
+# Example : you are trying to reach a REPORT, looking for the word "FLOOD" in his TITLE. See :
+# ... fields[endpoints == "reports"] ... (or other method you wish on those tables)
 Param_table = cbind(fields,endpoints)
 ```
 
@@ -148,6 +149,7 @@ COLLECT_SEARCH = function(res) {
 
 ```{r PRINTING,echo=TRUE}
 PRINT_SEARCH = function(res,
+                        summary = NULL,
                         numero,
                         namefile,
                         endpoint,
@@ -168,7 +170,31 @@ PRINT_SEARCH = function(res,
   resp = req_perform(req)
   resp = resp_body_json(resp)
   
-  # Print resource to txt file :
+  # Print resource SUMMARY to txt file :
+  if(!is.null(summary)){
+    sink(
+    file = paste0(
+      "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/Logs/",
+      namefile,
+      ".txt"
+    ))
+      print("-------------------------------------------------------------------")
+      print("Time for request : ")
+      print(res$took[1])
+      print("-------------------------------------------------------------------")
+      print("Total responses :")
+      print(res$totalCount[1])
+      print("-------------------------------------------------------------------")
+      print("Responses selected :")
+      print(res$count[1])
+      print("-------------------------------------------------------------------")
+      print("Summary :")
+      print("")
+      print(eval(parse(text = paste0("res$data.fields$",fields[endpoint]))))
+    sink()
+  }
+  
+  # Print resource to TXT file :
   if(!is.null(txt)){
   # sink(
   #   file = paste0(
@@ -383,12 +409,24 @@ Main <-
   # Makes a "Kickstart" with individual concatenated parametric codes.
   # - Each line verifying argument existence before concatenation.
     kickstart = paste0(limit1)
-    kickstart = ifelse(exists("ascending1"),capture.output(cat(kickstart,ascending1,sep = "")),kickstart)
-    kickstart = ifelse(exists("country1"),capture.output(cat(kickstart,country1,sep = "")),kickstart)
-    kickstart = ifelse(exists("date.start1"),capture.output(cat(kickstart,date.start1,sep = "")),kickstart)
-    kickstart = ifelse(exists("date.end1"),capture.output(cat(kickstart,date.end1,sep = "")),kickstart)
-    kickstart = ifelse(exists("disaster1"),capture.output(cat(kickstart,disaster1,sep = "")),kickstart)
-    kickstart = ifelse(exists("exact.match1"),capture.output(cat(kickstart,country1,sep = "")),kickstart)
+    kickstart = ifelse(exists("ascending1"),
+                       capture.output(cat(kickstart,ascending1,sep = "")),
+                       kickstart)
+    kickstart = ifelse(exists("country1"),
+                       capture.output(cat(kickstart,country1,sep = "")),
+                       kickstart)
+    kickstart = ifelse(exists("date.start1"),
+                       capture.output(cat(kickstart,date.start1,sep = "")),
+                       kickstart)
+    kickstart = ifelse(exists("date.end1"),
+                       capture.output(cat(kickstart,date.end1,sep = "")),
+                       kickstart)
+    kickstart = ifelse(exists("disaster1"),
+                       capture.output(cat(kickstart,disaster1,sep = "")),
+                       kickstart)
+    kickstart = ifelse(exists("exact.match1"),
+                       capture.output(cat(kickstart,country1,sep = "")),
+                       kickstart)
 
   # - Then, concatenation with [API-url + endpoint-code] :
     kickstart = paste0(req$url,kickstart)
@@ -480,6 +518,15 @@ res = Main(
   operator = "OR"
 )
 
+PRINT_SEARCH(
+  res = res,
+  summary = TRUE,
+  namefile = "search_cuba_storm",
+  endpoint = endpoint,
+  numero = 3,
+  txt = TRUE,
+  html = TRUE
+)
 ```
 
 ```{r CASE, echo=TRUE}

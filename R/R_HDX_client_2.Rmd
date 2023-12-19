@@ -7,6 +7,9 @@ output:
     df_print: paged
 ---
 
+https://rdrr.io/github/dickoa/rhdx/man/
+
+
 ```{r setup, include=TRUE}
 knitr::opts_chunk$set(echo = TRUE)
 
@@ -22,11 +25,12 @@ install.packages("RCurl")
 # Loading packages :
 library("rhdx")
 library("RCurl")
+library("purrr")
 ```
 
 # Summary
 
-This script installs from the *"configuration shunk"* the *"rhdx"* package. All interogations of the HDX database relies on it. 
+This script installs from the *"configuration shunk"* the *"rhdx"* package. All interrogations of the HDX database relies on it. 
 
 For more informations, see :    
 https://gitlab.com/dickoa/rhdx
@@ -69,59 +73,24 @@ temp = search_datasets(Keyword,rows = 100)
 
 HDX_SEARCH function returns a list of HDX_datasets, regarding selection criterias. We now want to extract  informations from each dataset, which is possible in a "*lapply*" way :
 
-```{r SEARCH_IN_SELECTION, echo=TRUE}
-# Choose in results which medias to select for download :
-SEARCH_IN_SELECTION = function(res){
-  # Summarize TAGs presents in results :
-  # CAUTION : see how "lapply" pattern exposes results to common HDX-Function :
-  print(unique(unlist(lapply(res,function(x){get_tags_names(x)}))))
-  # Keyboard entry the chosen TAG(s) :
-  clef_recherche = readline("Enter TAG for selection : \n")
-  # Produce a mask with tag criteria
-  mask = unlist(lapply(temp,function(x){unlist(sum(get_tags_names(x)==clef_recherche))>=1}))
-  print(mask)
-  # Apply the mask to results for sub-selection : 
-  temp_selected = res[mask]
-  # Return sub-selection
-  return(temp_selected)
-}
-```
-
-```{r DOWNLOAD, echo=TRUE}
-# Search in selection by TAGs :
-temp_1 = SEARCH_IN_SELECTION(temp)
-
-# Access to ressources in result : 
-temp_1[[1]]$get_resources()
-
-# Destination folder 
-folder = "C:/Users/Benjamin/Documents/UN/HDX/R_HDX_proj-1/HDX_proj-1/Client_1"
-
-# execute download :
-download_resource(temp_1[[1]]$get_resources()[[1]],folder = folder)
-```
-
+## Search by date
 ```{r HDX FUNCTIONS, echo=TRUE}
 # Get package for char to date conversion :
 library(lubridate)
 
 # Module to perform date-specifi search in selection :
-GET_DATE <- function(selection,h=FALSE){
+GET_DATE <- function(selection){
     # Get a selection from HDX_SEARCH funtion and get all dates.
     temp_date <- lapply(selection,function(x){get_dataset_date(x)})
-    # IF option h is TRUE -> print an histogram time representation
-    if(h == TRUE){
-      hist(table(unlist(x)))
-    }
-    # Each dataset has a [from;to] pattenr. Here are two columns [Min;Max] :
-    min_date_raw = unlist(lapply(temp_date,function(x){print(x[1])}))
-    max_date_raw = unlist(lapply(temp_date,function(x){print(x[2])}))
+    # Each dataset has a [from ; to] pattenr. 
+    # Here are two columns, converted to date-type :
+    from_date = unlist(lapply(temp_date,function(x){anydate(x[1])}))
+    to_date = unlist(lapply(temp_date,function(x){anydate(x[2])}))
     # That are binded by columns :
-    temp_dates = cbind(min_date_raw,max_date_raw)
-    # Convert columns to date type :
-    temp_date[1] = ymd(temp_date[1])
-    temp_date[2] = ymd(temp_date[2])
-    
+    temp_dates = cbind(from_date,to_date)
+ 
+    temp_dates[,1] = ymd(temp_dates[,1])
+    temp_dates[,2] = ymd(temp_dates[,2])  
     return(temp_dates)
 }
 
@@ -133,7 +102,7 @@ GET_UNDER_DATES = function(x){
   # Get clipboard entry for upper limit :
   date_recherche = readline("Enter DATE_MAX for selection : \n")
   # Production of a mask for selection subset :
-  mask_date = temp_dates[,1] < date_recherche
+  mask_date = temp_dates[,1] < as.Date(date_recherche)
   # Subset in return :
   return(x[mask_date])
 }
@@ -152,17 +121,116 @@ GET_UPPER_DATES = function(x){
 }
 ```
 
-```{r , echo=TRUE}
-# Direct pull of a dataset with <HDX Dataset>
-pull_HDX <- function(ID){
-  tmp = pull_dataset(identifier = ID) %>%
-    get_resource(1) %>%
-    read_resource()
-  return(tmp)
+## Aggregate criterias
+
+```{r SEARCH_IN_SELECTION, echo=TRUE}
+# Choose in results which medias to select for download :
+SEARCH_IN_SELECTION = function(res){
+  dates = GET_DATE(res)
+  print(dates)
+  dates_recherche = readline("Enter DATES for lower limit : \n")
+  dates_recherche = readline("Enter DATES for upper limit : \n")
+  
+  
+  
+  # Summarize TAGs presents in results :
+  # CAUTION : see how "lapply" pattern exposes results to common HDX-Function :
+  print(unique(unlist(lapply(res,function(x){get_tags_names(x)}))))
+  # Keyboard entry the chosen TAG(s) :
+  clef_recherche = readline("Enter TAG for selection : \n")
+  # Produce a mask with tag criteria
+  mask = unlist(lapply(temp,function(x){unlist(sum(get_tags_names(x)==clef_recherche))>=1}))
+  print(mask)
+  # Apply the mask to results for sub-selection : 
+  temp_selected = res[mask]
+  # Return sub-selection
+  return(temp_selected)
+}
+```
+
+```{r COD CONTENTS,echo=TRUE}
+# Define Keywors : 
+path = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/COD/"
+# NOTE : 'COD services API' is the specific name to resource in HDX. 
+# In case of a problem, see nomenclatures and names in HDX directly.
+#
+# 1. Search online for HDX_Common Opperationnal Datasets (CODs) :
+Keyword = 'COD Services API'
+temp = search_datasets(Keyword,rows = 1)
+
+# Navigate to resources : 
+# 
+# "CODServiceDeploymentStatus.xlsx"
+x = temp %>% pluck(1) %>% get_resources() %>% pluck(5)
+ 
+if(x$get_format()=="xlsx"){
+  x$download(folder = path) 
+}else{
+  print("resource \"CODServiceDeploymentStatus.xlsx\" has changed : bad format")
 }
 
-res = HDX_SEARCH()
-# ressource = read_resource(ressources_liste[[res]])
+# "Available COD Population Statistics through API access"
+x = temp%>%pluck(1)%>%get_resources()%>%pluck(1)
 
-system2("pip install lasio")
+if(x$get_format()=="json"){
+  x$download(folder = path) 
+}else{
+  print("resource \"Available COD Population Statistics through API access\" has changed : bad format")
+}
+
+# "ArcGIS Server portfolio of services"
+# HTML doc type : see "filename" below in "download function : erase param to get JSON)
+x = temp%>%pluck(1)%>%get_resources()%>%pluck(3)
+
+if(x$get_format()=="json"){
+  x$download(folder = path,filename = "COD_External.html")
+}else{
+  print("resource \"ArcGIS Server portfolio of services\" has changed : bad format")
+}
 ```
+
+```{r COD UPDATE, echo=TRUE}
+
+# Code to automatically download newer version of COD meta contents (list to make in text)
+# is to be converted into a "get_all_resources" function : 
+
+Keyword = 'COD Services API'
+temp = search_datasets(Keyword,rows = 1)
+COD_dataset_ID = temp[[1]]$data$id
+
+# Pull dataset directly from ID :
+COD_dataset = pull_dataset(COD_dataset_ID)
+c = COD_dataset$get_resources()
+
+# Can visit the Web-page :
+# x$browse()
+COD_resources_IDs =c()
+
+for(i in seq(1,length(w))){
+  COD_resources_IDs = append(data_IDs, COD_resources[[i]]$data$id)
+}
+
+lapply(COD_resources_IDs,function(x){download_resource(pull_resource(x),folder = path)})
+```
+
+```{r EXAMPLE, echo=TRUE}
+# Destination folder 
+folder = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/"
+result = res[[1]]%>%get_resources()
+result[[2]]$download(folder = folder,filename = "PalestinianCommunities_WB_GS_Excel.xlsx")
+
+stat_results = c()
+districts_results = unique(palest$District)
+
+prop.table(table(palest[palest$District == districts_list[1],]$Urban_Rurl))
+
+# Search in selection by TAGs :
+temp_1 = SEARCH_IN_SELECTION(temp)
+
+# Access to ressources in result : 
+temp_1[[1]]$get_resources()
+
+# execute download :
+download_resource(temp_1[[1]]$get_resources()[[1]],folder = folder)
+```
+
