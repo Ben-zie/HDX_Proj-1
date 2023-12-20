@@ -7,33 +7,44 @@ output:
     df_print: paged
 ---
 
-https://rdrr.io/github/dickoa/rhdx/man/
-
-
-```{r setup, include=TRUE}
-knitr::opts_chunk$set(echo = TRUE)
-
-# The easiest way to get dplyr is to install the whole tidyverse:
-install.packages("tidyverse")
-# Alternatively, install just dplyr:
-install.packages("dplyr")
-
-# Install HDX package from Github :
-# install.packages("remotes")
-remotes::install_gitlab("dickoa/rhdx")
-install.packages("RCurl")
-# Loading packages :
-library("rhdx")
-library("RCurl")
-library("purrr")
-```
-
-# Summary
+# CONFIGURATION
 
 This script installs from the *"configuration shunk"* the *"rhdx"* package. All interrogations of the HDX database relies on it. 
 
 For more informations, see :    
 https://gitlab.com/dickoa/rhdx
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# The easiest way to get dplyr is to install the whole tidyverse:
+# install.packages("tidyverse")
+# Alternatively, install just dplyr:
+# install.packages("dplyr")
+# install.packages('anytime')
+
+
+# Install HDX package from Github :
+# install.packages("remotes")
+# remotes::install_gitlab("dickoa/rhdx")
+# install.packages("RCurl")
+# Loading packages :
+library("rhdx")
+library("dplyr")
+library("RCurl")
+library("purrr")
+library("lubridate")
+library('anytime')
+
+```
+
+## HDX Config :
+
+Mendatory to configure RHDX package connexion with the HDX SERVER. 
+
+For informations on the package, see man-page on : 
+
+https://rdrr.io/github/dickoa/rhdx/man/
 
 ```{r conf, echo=TRUE}
 set_rhdx_config(
@@ -46,7 +57,7 @@ set_rhdx_config(
 )
 ```
 
-Verifying configuration by : 
+To verify configuration : 
 
 ```{r , echo=TRUE}
 # Configuration check :
@@ -59,87 +70,91 @@ With result beeing :
    HDX site url: https://data.humdata.org
    HDX API key: *
 
-## CALL
+## SEARCH IN MAIN SERVER
 
-A simple (but evolutiv) function to call on HDX-database, searching for *"key-word"* and specifying a *"limit"* for result-list. 
+Simple (but evolutiv) search by *"key-word"*, specifying a *"limit"* for result-list. Below a "configuration panel" exposing variables :
 
 ```{r SEARCH MODULE, echo=TRUE}
 # This shunck is a controle panel. Defin your variables :
 Keyword = 'COD'
 
 # Simple search with SEARCH_DATASETS function :
-temp = search_datasets(Keyword,rows = 100)
+temp = search_datasets(Keyword,rows = 20)
+
+GET_UNDER_DATES(temp)
 ```
 
-HDX_SEARCH function returns a list of HDX_datasets, regarding selection criterias. We now want to extract  informations from each dataset, which is possible in a "*lapply*" way :
+## SEARCH IN RESULTS
 
-## Search by date
+Function returns a list of "HDX_datasets". Several criterias are then used to select in this results-pool, begining with date. 
+
+N.B : to extract  informations from each dataset in the pool, a "*lapply*" structure easily exposes specific HDX functions (see [Manual](https://rdrr.io/github/dickoa/rhdx/man/)) :
+
 ```{r HDX FUNCTIONS, echo=TRUE}
-# Get package for char to date conversion :
-library(lubridate)
-
 # Module to perform date-specifi search in selection :
-GET_DATE <- function(selection){
-    # Get a selection from HDX_SEARCH funtion and get all dates.
-    temp_date <- lapply(selection,function(x){get_dataset_date(x)})
+SEARCH_DATE <- function(selection){
+    # Use a LAPPLY paterne for HDX-funtion. 
+    # IMPORTANT : dates are here converted to DATE format (see ANYDATE)
+    temp_date <- lapply(selection,
+                       function(x){anydate(get_dataset_date(x))})
     # Each dataset has a [from ; to] pattenr. 
     # Here are two columns, converted to date-type :
-    from_date = unlist(lapply(temp_date,function(x){anydate(x[1])}))
-    to_date = unlist(lapply(temp_date,function(x){anydate(x[2])}))
+    from_date = lapply(temp_date,
+                       function(x){x[1]})
+    to_date = lapply(temp_date,
+                       function(x){anydate(x[2])})
     # That are binded by columns :
     temp_dates = cbind(from_date,to_date)
  
-    temp_dates[,1] = ymd(temp_dates[,1])
-    temp_dates[,2] = ymd(temp_dates[,2])  
+    # temp_dates[,1] = ymd(temp_dates[,1])
+    # temp_dates[,2] = ymd(temp_dates[,2])  
     return(temp_dates)
 }
 
-GET_UNDER_DATES = function(x){
-  # Uses GET_DATE method to extract dates from datasets :
-  temp_dates = GET_DATE(x)
-  # print given dates for choice of upper limit :
-  print(temp_dates)
-  # Get clipboard entry for upper limit :
-  date_recherche = readline("Enter DATE_MAX for selection : \n")
-  # Production of a mask for selection subset :
-  mask_date = temp_dates[,1] < as.Date(date_recherche)
-  # Subset in return :
-  return(x[mask_date])
+SEARCH_DATES_UNDER = function(x){
+    # Uses GET_DATE method to extract dates from datasets :
+    temp_dates = SEARCH_DATE(x)
+    # print given dates for choice of upper limit :
+    print(temp_dates)
+    # Get clipboard entry for upper limit :
+    date_recherche = as.Date(readline("Enter DATE_MAX for selection (without \"\") : \n"))
+    # Production of a mask for selection subset :
+    mask_date = temp_dates[,1] < date_recherche
+    # Subset in return :
+    return(x[mask_date])
 }
 
-GET_UPPER_DATES = function(x){
-  # Uses GET_DATE method to extract dates from datasets :
-  temp_dates = GET_DATE(x)
-  # print given dates for choice of lesser limit :
-  print(temp_dates)
-  # Get clipboard entry for lesser limit :
-  date_recherche = readline("Enter DATE_IN for selection : \n")
-  # Production of a mask for selection subset :
-  ifelse(!is.na(temp_dates[,2]),temp_dates[,2],temp_dates[,1]) > date_recherche
-  # Subset in return :
-  return(x[mask_date])
+SEARCH_DATES_UPPER = function(x){
+    # Uses GET_DATE method to extract dates from datasets :
+    temp_dates = SEARCH_DATE(x)
+    # print given dates for choice of lesser limit :
+    print(temp_dates)
+    # Get clipboard entry for lesser limit :
+    date_recherche = as.Date(readline("Enter DATE_IN for selection (without \"\") : \n"))
+    # Production of a mask for selection subset :
+    # NOTE : 
+    # Necessarily consider case where second date is NULL -> thus IFELSE structure
+    mask_date = 
+      ifelse(!is.na(temp_dates[, 2]), temp_dates[, 2], temp_dates[, 1]) > date_recherche
+    # Subset in return :
+    return(x[mask_date])
 }
 ```
 
 ## Aggregate criterias
 
-```{r SEARCH_IN_SELECTION, echo=TRUE}
+```{r SEARCH BY TAGS, echo=TRUE}
 # Choose in results which medias to select for download :
-SEARCH_IN_SELECTION = function(res){
-  dates = GET_DATE(res)
-  print(dates)
-  dates_recherche = readline("Enter DATES for lower limit : \n")
-  dates_recherche = readline("Enter DATES for upper limit : \n")
-  
-  
-  
+SEARCH_TAGS = function(res){
   # Summarize TAGs presents in results :
   # CAUTION : see how "lapply" pattern exposes results to common HDX-Function :
-  print(unique(unlist(lapply(res,function(x){get_tags_names(x)}))))
+  print(unique(unlist(lapply(res,
+                       function(x){get_tags_names(x)}))))
   # Keyboard entry the chosen TAG(s) :
   clef_recherche = readline("Enter TAG for selection : \n")
   # Produce a mask with tag criteria
-  mask = unlist(lapply(temp,function(x){unlist(sum(get_tags_names(x)==clef_recherche))>=1}))
+  mask = unlist(lapply(temp,
+                       function(x){unlist(sum(get_tags_names(x)==clef_recherche))>=1}))
   print(mask)
   # Apply the mask to results for sub-selection : 
   temp_selected = res[mask]
@@ -156,7 +171,7 @@ path = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/COD/"
 #
 # 1. Search online for HDX_Common Opperationnal Datasets (CODs) :
 Keyword = 'COD Services API'
-temp = search_datasets(Keyword,rows = 1)
+temp = search_datasets(Keyword,rows = 20)
 
 # Navigate to resources : 
 # 
