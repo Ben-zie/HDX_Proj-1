@@ -74,21 +74,21 @@ With result beeing :
 
 Simple (but evolutiv) search by *"key-word"*, specifying a *"limit"* for result-list. Below a "configuration panel" exposing variables :
 
-```{r SEARCH MODULE, echo=TRUE}
+```{r SEARCH MODULE, message=FALSE, include=FALSE}
 # This shunck is a controle panel. Defin your variables :
-Keyword = 'COD'
+Keyword = 'ebola'
 
 # Simple search with SEARCH_DATASETS function :
 temp = search_datasets(Keyword,rows = 20)
-
-GET_UNDER_DATES(temp)
 ```
 
 ## SEARCH IN RESULTS
 
-Function returns a list of "HDX_datasets". Several criterias are then used to select in this results-pool, begining with date. 
+"*search_datasets*" function returns a list of HDX_datasets objects. Several criterias can then be used to select in this pool (eg. dates, tags, organisation...). Each criteria corresponds to HDX-package functions, simply exposed by a "*lapply*" structure. 
 
-N.B : to extract  informations from each dataset in the pool, a "*lapply*" structure easily exposes specific HDX functions (see [Manual](https://rdrr.io/github/dickoa/rhdx/man/)) :
+See HDX [Manual](https://rdrr.io/github/dickoa/rhdx/man/) for more. 
+
+### By date 
 
 ```{r HDX FUNCTIONS, echo=TRUE}
 # Module to perform date-specifi search in selection :
@@ -117,7 +117,7 @@ SEARCH_DATES_UNDER = function(x){
     # print given dates for choice of upper limit :
     print(temp_dates)
     # Get clipboard entry for upper limit :
-    date_recherche = as.Date(readline("Enter DATE_MAX for selection (without \"\") : \n"))
+    date_recherche = as.Date(readline("Enter UPPER DATE LIMIT for selection (without \"\") : \n"))
     # Production of a mask for selection subset :
     mask_date = temp_dates[,1] < date_recherche
     # Subset in return :
@@ -130,7 +130,7 @@ SEARCH_DATES_UPPER = function(x){
     # print given dates for choice of lesser limit :
     print(temp_dates)
     # Get clipboard entry for lesser limit :
-    date_recherche = as.Date(readline("Enter DATE_IN for selection (without \"\") : \n"))
+    date_recherche = as.Date(readline("Enter LOWER DATE LIMIT for selection (without \"\") : \n"))
     # Production of a mask for selection subset :
     # NOTE : 
     # Necessarily consider case where second date is NULL -> thus IFELSE structure
@@ -141,7 +141,7 @@ SEARCH_DATES_UPPER = function(x){
 }
 ```
 
-## Aggregate criterias
+### By TAGs
 
 ```{r SEARCH BY TAGS, echo=TRUE}
 # Choose in results which medias to select for download :
@@ -163,7 +163,49 @@ SEARCH_TAGS = function(res){
 }
 ```
 
-```{r COD CONTENTS,echo=TRUE}
+```{r SEARCH IN SELECTION,echo=TRUE}
+AGGREG_SEARCH = function(){
+  # Begin with pooling results on KEYWORD and ROW LIMIT :
+  temp = search_datasets(query = Keyword,rows = rows)
+  # Use GET_DATE method to extract dates from datasets :
+  temp_dates = SEARCH_DATE(temp)
+  # Pick items by TAGs :
+  temp = SEARCH_TAGS(temp)
+  # Cut UPPER TRANCH regarding date argument : 
+  temp = SEARCH_DATES_UNDER(temp)
+  # Cut LOWER TRANCH regarding date argument : 
+  temp = SEARCH_DATES_UPPER(temp)
+  
+  temp_IDs = lapply(temp,function(x){x$data$id})
+  ID = c()
+  NAME = c()
+  
+  for(i in seq(1,length(temp_IDs))){
+    ID = append(ID, temp_IDs[[i]])
+    temp_dataset = pull_dataset(identifier = ID[i])
+    NAME = append(NAME, temp_dataset$data$name)
+    eval(parse(
+      text = paste0("RESOURCES_dataset_", i, " = get_resources(temp_dataset)")
+    ))
+    folder = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/TEST/",NAME[i])
+    eval(parse(
+      text = paste0("dir.create(folder)")
+    ))
+    eval(parse(
+      text = paste0(
+        "lapply(RESOURCES_dataset_",
+        i,
+        ",function(x){x$download(folder = folder)})"
+      )
+    ))
+  }
+}
+
+# temp%>%pluck(1)%>%get_resources()%>%pluck(2)%>%download_resource(folder = folder)
+
+```
+
+```{r FRESH COD CONTENTS,echo=TRUE}
 # Define Keywors : 
 path = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/COD/"
 # NOTE : 'COD services API' is the specific name to resource in HDX. 
@@ -205,10 +247,8 @@ if(x$get_format()=="json"){
 ```
 
 ```{r COD UPDATE, echo=TRUE}
-
 # Code to automatically download newer version of COD meta contents (list to make in text)
 # is to be converted into a "get_all_resources" function : 
-
 Keyword = 'COD Services API'
 temp = search_datasets(Keyword,rows = 1)
 COD_dataset_ID = temp[[1]]$data$id
@@ -231,6 +271,11 @@ lapply(COD_resources_IDs,function(x){download_resource(pull_resource(x),folder =
 ```{r EXAMPLE, echo=TRUE}
 # Destination folder 
 folder = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/"
+Keyword = 'COD Services API'
+rows = 10
+
+temp = search_datasets(query = Keyword,rows = rows)
+
 result = res[[1]]%>%get_resources()
 result[[2]]$download(folder = folder,filename = "PalestinianCommunities_WB_GS_Excel.xlsx")
 
@@ -245,6 +290,7 @@ temp_1 = SEARCH_IN_SELECTION(temp)
 # Access to ressources in result : 
 temp_1[[1]]$get_resources()
 
+temp_IDs = lapply(temp,function(x){x$data$id})
 # execute download :
 download_resource(temp_1[[1]]$get_resources()[[1]],folder = folder)
 ```
