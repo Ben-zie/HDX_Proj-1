@@ -29,16 +29,17 @@ library('anytime')
 ```
 
 ```{r PARAMETRISATION, echo=TRUE}
-# Define Keywors : 
-path    = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/COD/"
-Keyword = "COD Services API"
-rows    = 1
+
 ```
 
 ```{r COD UPDATE, echo=TRUE}
-COD_UPDATE = function(x){
-# Code to automatically download newer version of COD meta contents (list to make in text)
-# is to be converted into a "get_all_resources" function : 
+COD_UPDATE = function(DeployStatus = FALSE, Pop_stat = FALSE, GIS_servers = FALSE){
+  # Define Keywors : 
+  path    = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/COD/"
+  Keyword = "COD Services API"
+  rows    = 1
+  # Code to automatically download newer version of COD meta contents (list to make in text)
+  # is to be converted into a "get_all_resources" function : 
   if(!file.exists(paste0(path, "META"))) {
     file.create(paste0(path, "META"))
   }
@@ -62,16 +63,59 @@ COD_UPDATE = function(x){
     download_resource(pull_resource(x), folder = paste0(path, "META"))
   }
   )
+  # OPTIONAL : Fetch specific datas 
+    # Navigate to resources : 
+  # 
+  # "CODServiceDeploymentStatus.xlsx"
+  if(is.logical(DeployStatus) & DeployStatus == TRUE){
+  DeployStatus = temp %>% pluck(1) %>% get_resources() %>% pluck(5)
+  
+  if(DeployStatus$get_format()=="xlsx"){
+    DeployStatus$download(folder = path) 
+  }else{
+    print("resource \"CODServiceDeploymentStatus.xlsx\" has changed : bad format")
+  }}
+  # "Available COD Population Statistics through API access"
+  if(is.logical(Pop_stat) & Pop_stat==TRUE){
+  Pop_stat = temp%>%pluck(1)%>%get_resources()%>%pluck(1)
+  
+  if(Pop_stat$get_format()=="json"){
+    Pop_stat$download(folder = path) 
+  }else{
+    print("resource \"Available COD Population Statistics through API access\" has changed : bad format")
+  }}
+  # "ArcGIS Server portfolio of services"
+  # HTML doc type : see "filename" below in "download function : erase param to get JSON)
+  if(is.logical(GIS_servers) & GIS_servers==TRUE){
+  GIS_servers = temp%>%pluck(1)%>%get_resources()%>%pluck(3)
+  
+  if(GIS_servers$get_format()=="json"){
+    GIS_servers$download(folder = path,filename = "COD_External.html")
+  }else{
+    print("resource \"ArcGIS Server portfolio of services\" has changed : bad format")
+  }}
+  # Log module : 
+  # sink(file = paste0(path,"LogMeta"),append = TRUE)
+  # print("----------------------------------------------------------------------")
+  # print(paste("Upgraded : ",Sys.Date()))
+  # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+  # print(paste0("DeployStatus : ",DeployStatus))
+  # print("----------------------------------------------------------------------")
+  # print(paste0("Pop_stat : ",Pop_stat))
+  # print("----------------------------------------------------------------------")
+  # print(paste0("GIS_servers : ",GIS_servers))
+  # sink()
 }
 ```
 
 ```{r FRESH COD CONTENTS,echo=TRUE}
+country = "Tunisia"
+
 # Get COUNTRYs list and abreviations : 
 cod_services <- read_excel(paste0(path,"/META/codservicedeploymentstatus.xlsx"))
 country_list = unique(cod_services[order(cod_services$`COD Country`), 1:2])
 
 # Search for country abreviation : 
-country = "Tunisia"
 abreviation_country = country_list[country_list$`COD Country`==country,]
 
 # NOTE : 'COD services API' is the specific name to resource in HDX. 
@@ -91,36 +135,9 @@ res = search_datasets(
 sink(paste0(path,"Log_Search"))
   print(res)
 sink()
+```
 
+```{r RECYCLE,echo=TRUE}
 
-# Navigate to resources : 
-# 
-# "CODServiceDeploymentStatus.xlsx"
-x = temp %>% pluck(1) %>% get_resources() %>% pluck(5)
- 
-if(x$get_format()=="xlsx"){
-  x$download(folder = path) 
-}else{
-  print("resource \"CODServiceDeploymentStatus.xlsx\" has changed : bad format")
-}
-
-# "Available COD Population Statistics through API access"
-x = temp%>%pluck(1)%>%get_resources()%>%pluck(1)
-
-if(x$get_format()=="json"){
-  x$download(folder = path) 
-}else{
-  print("resource \"Available COD Population Statistics through API access\" has changed : bad format")
-}
-
-# "ArcGIS Server portfolio of services"
-# HTML doc type : see "filename" below in "download function : erase param to get JSON)
-x = temp%>%pluck(1)%>%get_resources()%>%pluck(3)
-
-if(x$get_format()=="json"){
-  x$download(folder = path,filename = "COD_External.html")
-}else{
-  print("resource \"ArcGIS Server portfolio of services\" has changed : bad format")
-}
 ```
 
