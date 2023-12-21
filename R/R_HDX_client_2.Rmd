@@ -23,7 +23,6 @@ knitr::opts_chunk$set(echo = TRUE)
 # install.packages("dplyr")
 # install.packages('anytime')
 
-
 # Install HDX package from Github :
 # install.packages("remotes")
 # remotes::install_gitlab("dickoa/rhdx")
@@ -168,21 +167,21 @@ SEARCH_TAGS = function(res){
 ## AGGREGATE search tools
 
 ```{r SEARCH IN SELECTION,echo=TRUE}
-AGGREG_SEARCH = function(results_pool = NULL, downloading = FALSE){
+AGGREG_SEARCH = function(results_pool = NULL, downloading = FALSE, log_file = FALSE){
   if(is.null(results_pool)) {
     # Begin with pooling results on KEYWORD and ROW LIMIT if no arguments passed :
     temp = search_datasets(query = Keyword, rows = rows)
   } else{
     temp = results_pool
   }
-  # Use GET_DATE method to extract dates from datasets :
-  temp_dates = SEARCH_DATE(temp)
   # Pick items by TAGs :
   temp = SEARCH_TAGS(temp)
   # Cut UPPER TRANCH regarding date argument : 
   temp = SEARCH_DATES_UNDER(temp)
   # Cut LOWER TRANCH regarding date argument : 
   temp = SEARCH_DATES_UPPER(temp)
+  # Use GET_DATE method to extract dates from datasets :
+  temp_dates = SEARCH_DATE(temp)
   
   temp_IDs = lapply(temp,
                     function(x){x$data$id})
@@ -208,7 +207,14 @@ AGGREG_SEARCH = function(results_pool = NULL, downloading = FALSE){
           ",function(x){x$download(folder = folder)})"
     )))}
   }
-  print(cat(paste(ID,NAME,sep = " -> "),sep = "\n"))
+  # Print results to console :
+  print(cbind(temp_dates,NAME))
+  # Print results to LOG :
+  if(log_file == TRUE){
+    sink(file = paste0(path,"AGGREG_SEARCH_Log"))
+      print(cbind(temp_dates,NAME))
+    sink()
+  }
 }
 
 # temp%>%pluck(1)%>%get_resources()%>%pluck(2)%>%download_resource(folder = folder)
