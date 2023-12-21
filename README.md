@@ -10,7 +10,7 @@ Hy ! Anyone whi reads this message is welcome to the HDX_client_project_1 main p
 
 See Wiki for resources and implementation : links to APIs and documentations, more precise explanations about functions ans development choices.  
 
-Anyway see below for usefull documentations. If you too are interested in working with DATA, public health and humanitarian news, feel free to contact me and share. 
+Anyway see below for usefull documentations. If you too are interested in working with DATA, public health and humanitarian news, I would be most pleased to meet and share through this Git-Hub chanel. 
 
 ## Humanitarian Data eXchange (HDX) :
 ### **Humaniratrian eXchange Langage (HXL)**       
