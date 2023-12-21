@@ -163,10 +163,16 @@ SEARCH_TAGS = function(res){
 }
 ```
 
+## AGGREGATE search tools
+
 ```{r SEARCH IN SELECTION,echo=TRUE}
-AGGREG_SEARCH = function(){
-  # Begin with pooling results on KEYWORD and ROW LIMIT :
-  temp = search_datasets(query = Keyword,rows = rows)
+AGGREG_SEARCH = function(results_pool = NULL){
+  if(is.null(results_pool)) {
+    # Begin with pooling results on KEYWORD and ROW LIMIT if no arguments passed :
+    temp = search_datasets(query = Keyword, rows = rows)
+  } else{
+    temp = results_pool
+  }
   # Use GET_DATE method to extract dates from datasets :
   temp_dates = SEARCH_DATE(temp)
   # Pick items by TAGs :
@@ -205,93 +211,31 @@ AGGREG_SEARCH = function(){
 
 ```
 
-```{r FRESH COD CONTENTS,echo=TRUE}
-# Define Keywors : 
-path = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/COD/"
-# NOTE : 'COD services API' is the specific name to resource in HDX. 
-# In case of a problem, see nomenclatures and names in HDX directly.
-#
-# 1. Search online for HDX_Common Opperationnal Datasets (CODs) :
-Keyword = 'COD Services API'
-temp = search_datasets(Keyword,rows = 20)
-
-# Navigate to resources : 
-# 
-# "CODServiceDeploymentStatus.xlsx"
-x = temp %>% pluck(1) %>% get_resources() %>% pluck(5)
- 
-if(x$get_format()=="xlsx"){
-  x$download(folder = path) 
-}else{
-  print("resource \"CODServiceDeploymentStatus.xlsx\" has changed : bad format")
-}
-
-# "Available COD Population Statistics through API access"
-x = temp%>%pluck(1)%>%get_resources()%>%pluck(1)
-
-if(x$get_format()=="json"){
-  x$download(folder = path) 
-}else{
-  print("resource \"Available COD Population Statistics through API access\" has changed : bad format")
-}
-
-# "ArcGIS Server portfolio of services"
-# HTML doc type : see "filename" below in "download function : erase param to get JSON)
-x = temp%>%pluck(1)%>%get_resources()%>%pluck(3)
-
-if(x$get_format()=="json"){
-  x$download(folder = path,filename = "COD_External.html")
-}else{
-  print("resource \"ArcGIS Server portfolio of services\" has changed : bad format")
-}
-```
-
-```{r COD UPDATE, echo=TRUE}
-# Code to automatically download newer version of COD meta contents (list to make in text)
-# is to be converted into a "get_all_resources" function : 
-Keyword = 'COD Services API'
-temp = search_datasets(Keyword,rows = 1)
-COD_dataset_ID = temp[[1]]$data$id
-
-# Pull dataset directly from ID :
-COD_dataset = pull_dataset(COD_dataset_ID)
-c = COD_dataset$get_resources()
-
-# Can visit the Web-page :
-# x$browse()
-COD_resources_IDs =c()
-
-for(i in seq(1,length(w))){
-  COD_resources_IDs = append(data_IDs, COD_resources[[i]]$data$id)
-}
-
-lapply(COD_resources_IDs,function(x){download_resource(pull_resource(x),folder = path)})
-```
 
 ```{r EXAMPLE, echo=TRUE}
 # Destination folder 
-folder = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/"
-Keyword = 'COD Services API'
-rows = 10
-
-temp = search_datasets(query = Keyword,rows = rows)
-
-result = res[[1]]%>%get_resources()
-result[[2]]$download(folder = folder,filename = "PalestinianCommunities_WB_GS_Excel.xlsx")
-
-stat_results = c()
-districts_results = unique(palest$District)
-
-prop.table(table(palest[palest$District == districts_list[1],]$Urban_Rurl))
-
-# Search in selection by TAGs :
-temp_1 = SEARCH_IN_SELECTION(temp)
-
-# Access to ressources in result : 
-temp_1[[1]]$get_resources()
-
-temp_IDs = lapply(temp,function(x){x$data$id})
-# execute download :
-download_resource(temp_1[[1]]$get_resources()[[1]],folder = folder)
+# folder = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/"
+# Keyword = 'COD Services API'
+# rows = 10
+# 
+# temp = search_datasets(query = Keyword,rows = rows)
+# 
+# result = temp[[1]]%>%get_resources()
+# result[[2]]$download(folder = folder,filename = "PalestinianCommunities_WB_GS_Excel.xlsx")
+# 
+# stat_results = c()
+# districts_results = unique(palest$District)
+# 
+# prop.table(table(palest[palest$District == districts_list[1],]$Urban_Rurl))
+# 
+# # Search in selection by TAGs :
+# temp_1 = SEARCH_IN_SELECTION(temp)
+# 
+# # Access to ressources in result : 
+# temp_1[[1]]$get_resources()
+# 
+# temp_IDs = lapply(temp,function(x){x$data$id})
+# # execute download :
+# download_resource(temp_1[[1]]$get_resources()[[1]],folder = folder)
 ```
 
