@@ -14,7 +14,6 @@ knitr::opts_chunk$set(echo = TRUE)
 # install.packages("dplyr")
 # install.packages('anytime')
 
-
 # Install HDX package from Github :
 # install.packages("remotes")
 # remotes::install_gitlab("dickoa/rhdx")
@@ -26,16 +25,22 @@ library("RCurl")
 library("purrr")
 library("lubridate")
 library('anytime')
+library("readxl")
 ```
 
-```{r PARAMETRISATION, echo=TRUE}
-
+```{r PATH, include=FALSE}
+# Define PATH :
+path = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/COD/"
 ```
+
 
 ```{r COD UPDATE, echo=TRUE}
-COD_UPDATE = function(DeployStatus = FALSE, Pop_stat = FALSE, GIS_servers = FALSE){
+COD_UPDATE = function(update_all = FALSE,
+                      DeployStatus = FALSE,
+                      Pop_stat = FALSE,
+                      GIS_servers = FALSE) {
+  
   # Define Keywors : 
-  path    = "C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/From_HDX/COD/"
   Keyword = "COD Services API"
   rows    = 1
   # Code to automatically download newer version of COD meta contents (list to make in text)
@@ -44,97 +49,128 @@ COD_UPDATE = function(DeployStatus = FALSE, Pop_stat = FALSE, GIS_servers = FALS
     file.create(paste0(path, "META"))
   }
   temp = search_datasets(query = Keyword, rows = rows)
-  COD_dataset_ID = temp[[1]]$data$id
   
-  # Pull dataset directly from ID :
-  COD_dataset = pull_dataset(COD_dataset_ID)
-  COD_resources = COD_dataset$get_resources()
-  
-  # Can visit the Web-page :
-  # x$browse()
-  COD_resources_IDs =c()
-  
-  for (i in seq(1, length(COD_resources))) {
-    COD_resources_IDs = append(COD_resources_IDs, COD_resources[[i]]$data$id)
+  if(update_all == TRUE){
+    COD_dataset_ID = temp[[1]]$data$id
+    # Pull dataset directly from ID :
+    COD_dataset = pull_dataset(COD_dataset_ID)
+    COD_resources = COD_dataset$get_resources()
+    
+    # Can visit the Web-page :
+    # x$browse()
+    COD_resources_IDs =c()
+    
+    for (i in seq(1, length(COD_resources))) {
+      COD_resources_IDs = append(COD_resources_IDs, COD_resources[[i]]$data$id)
+    }
+    
+    # Fetch datas from HDX
+    lapply(COD_resources_IDs, function(x) {
+      download_resource(pull_resource(x), folder = paste0(path, "META"))
+    })
+  }else{
+    # OPTIONAL : Fetch specific datas 
+      # Navigate to resources : 
+    # 
+    # "CODServiceDeploymentStatus.xlsx"
+    if(is.logical(DeployStatus) & DeployStatus == TRUE){
+      DeployStatus = temp %>% pluck(1) %>% get_resources() %>% pluck(5)
+    
+    if(DeployStatus$get_format()=="xlsx"){
+      DeployStatus$download(folder = path) 
+    }else{
+      print("resource \"CODServiceDeploymentStatus.xlsx\" has changed : bad format")
+    }}
+    # "Available COD Population Statistics through API access"
+    if(is.logical(Pop_stat) & Pop_stat==TRUE){
+      Pop_stat = temp%>%pluck(1)%>%get_resources()%>%pluck(1)
+    
+    if(Pop_stat$get_format()=="json"){
+      Pop_stat$download(folder = path) 
+    }else{
+      print("resource \"Available COD Population Statistics through API access\" has changed : bad format")
+    }}
+    # "ArcGIS Server portfolio of services"
+    # HTML doc type : see "filename" below in "download function : erase param to get JSON)
+    if(is.logical(GIS_servers) & GIS_servers==TRUE){
+      GIS_servers = temp%>%pluck(1)%>%get_resources()%>%pluck(3)
+    
+    if(GIS_servers$get_format()=="json"){
+      GIS_servers$download(folder = path,filename = "COD_External.html")
+    }else{
+      print("resource \"ArcGIS Server portfolio of services\" has changed : bad format")
+    }}
   }
-  
-  # Fetch datas from HDX
-  lapply(COD_resources_IDs, function(x) {
-    download_resource(pull_resource(x), folder = paste0(path, "META"))
-  }
-  )
-  # OPTIONAL : Fetch specific datas 
-    # Navigate to resources : 
-  # 
-  # "CODServiceDeploymentStatus.xlsx"
-  if(is.logical(DeployStatus) & DeployStatus == TRUE){
-  DeployStatus = temp %>% pluck(1) %>% get_resources() %>% pluck(5)
-  
-  if(DeployStatus$get_format()=="xlsx"){
-    DeployStatus$download(folder = path) 
-  }else{
-    print("resource \"CODServiceDeploymentStatus.xlsx\" has changed : bad format")
-  }}
-  # "Available COD Population Statistics through API access"
-  if(is.logical(Pop_stat) & Pop_stat==TRUE){
-  Pop_stat = temp%>%pluck(1)%>%get_resources()%>%pluck(1)
-  
-  if(Pop_stat$get_format()=="json"){
-    Pop_stat$download(folder = path) 
-  }else{
-    print("resource \"Available COD Population Statistics through API access\" has changed : bad format")
-  }}
-  # "ArcGIS Server portfolio of services"
-  # HTML doc type : see "filename" below in "download function : erase param to get JSON)
-  if(is.logical(GIS_servers) & GIS_servers==TRUE){
-  GIS_servers = temp%>%pluck(1)%>%get_resources()%>%pluck(3)
-  
-  if(GIS_servers$get_format()=="json"){
-    GIS_servers$download(folder = path,filename = "COD_External.html")
-  }else{
-    print("resource \"ArcGIS Server portfolio of services\" has changed : bad format")
-  }}
   # Log module : 
-  # sink(file = paste0(path,"LogMeta"),append = TRUE)
-  # print("----------------------------------------------------------------------")
-  # print(paste("Upgraded : ",Sys.Date()))
-  # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  # print(paste0("DeployStatus : ",DeployStatus))
-  # print("----------------------------------------------------------------------")
-  # print(paste0("Pop_stat : ",Pop_stat))
-  # print("----------------------------------------------------------------------")
-  # print(paste0("GIS_servers : ",GIS_servers))
-  # sink()
+  sink(file = paste0(path,"LogMeta"),append = TRUE)
+  print("----------------------------------------------------------------------")
+  print(paste("Upgraded : ",Sys.Date()))
+  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+  print(paste0("DeployStatus : ",DeployStatus))
+  print("----------------------------------------------------------------------")
+  print(paste0("Pop_stat : ",Pop_stat))
+  print("----------------------------------------------------------------------")
+  print(paste0("GIS_servers : ",GIS_servers))
+  sink()
+}
+```
+
+```{r PARAMETRISATION, echo=TRUE}
+#-------------------------------------------------------------------------------
+name_file = c()
+query = c()
+filter_query = c()
+#-------------------------------------------------------------------------------
+# COUNTRY parametre :
+country = "Tunisia"
+# Get COUNTRYs list and abreviations : 
+# TODO : convert to R-object procedure
+cod_services <- read_excel(paste0(path,"/META/codservicedeploymentstatus.xlsx"))
+country_list = unique(cod_services[order(cod_services$`COD Country`), 1:2])
+# Search for country abreviation : 
+abreviation_country = country_list[country_list$`COD Country`==country,]
+#-------------------------------------------------------------------------------
+# KEYWORD parametre :
+# - for boundaries materials : 
+name_file     = append(name_file,
+                   paste0("cod-bound-",
+                          tolower(as.character(abreviation_country[2]))))
+query         = append(query, 
+                   paste("COD Subnational Administrative Boundaries",
+                          name_file[1]))
+filter_query  = append(filter_query, abreviation_country)
+# - for population materials : 
+name_file     = append(name_file,
+                   paste0("cod-ps-",
+                          tolower(as.character(abreviation_country[2]))))
+query         = append(query, 
+                   paste(name_file[2], 
+                         "baseline population"))
+filter_query  = append(filter_query, abreviation_country)
+
+for(i in seq(1,length(query))){
+  fetch_files(query = query[i],
+              filter_query = filter_query[i],
+              name_file = name_file[i])
 }
 ```
 
 ```{r FRESH COD CONTENTS,echo=TRUE}
-country = "Tunisia"
-
-# Get COUNTRYs list and abreviations : 
-cod_services <- read_excel(paste0(path,"/META/codservicedeploymentstatus.xlsx"))
-country_list = unique(cod_services[order(cod_services$`COD Country`), 1:2])
-
-# Search for country abreviation : 
-abreviation_country = country_list[country_list$`COD Country`==country,]
-
 # NOTE : 'COD services API' is the specific name to resource in HDX. 
 # In case of a problem, see nomenclatures and names in HDX directly.
 #
 # 1. Search online for HDX_Common Opperationnal Datasets (CODs) :
-Keyword = "COD Subnational Administrative Boundaries"
+fetch_files = function(name_file, query, filter_query, rows = 20) {
 
-Admin_Bound_DTS = search_datasets(query = Keyword,filter_query = as.character(abreviation_country[2]))
+res = search_datasets(query = query,
+                            filter_query = filter_query,
+                            rows = rows
+                            )
 
-res = search_datasets(
-          query = paste0("cod-ps-", tolower(as.character(abreviation_country[2])),
-                   "baseline population"),
-          filter_query = as.character(abreviation_country[2])
-)
-
-sink(paste0(path,"Log_Search"))
+sink(file = paste0(path,"Logs/",name_file),append = FALSE,type = "output")
   print(res)
 sink()
+}
 ```
 
 ```{r RECYCLE,echo=TRUE}
