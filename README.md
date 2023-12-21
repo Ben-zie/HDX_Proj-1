@@ -1,14 +1,16 @@
 # HDX_Proj-1
-(Set of scripts to work with the "[Humanitarian Data eXchange](https://data.humdata.org/ "HDX Main page")" API)
+(Scripts to work with the "[Humanitarian Data eXchange](https://data.humdata.org/ "HDX Main page")" API)
 ---
-By Benjamin DAUTRIF    
+By *Benjamin DAUTRIF*    
 Start date : 10/26/2023 
 
 [HDX_Proj-1/wiki](https://github.com/Ben-zie/HDX_Proj-1/wiki)
 
-Hy ! If anyone reads this message : you are welcome to the HDX_client_project_1
+Hy ! Anyone whi reads this message is welcome to the HDX_client_project_1 main page.
 
-See Wiki for resources and implementation. Anyway see below for some usefull documentations :
+See Wiki for resources and implementation : links to APIs and documentations, more precise explanations about functions ans development choices.  
+
+Anyway see below for usefull documentations. If you too are interested in working with DATA, public health and humanitarian news, feel free to contact me and share. 
 
 ## Humanitarian Data eXchange (HDX) :
 ### **Humaniratrian eXchange Langage (HXL)**       
