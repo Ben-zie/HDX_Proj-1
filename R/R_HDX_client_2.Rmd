@@ -112,10 +112,12 @@ SEARCH_DATE <- function(selection){
 }
 
 SEARCH_DATES_UNDER = function(x){
+    temp_names = lapply(x,
+                      function(x){x$data$dataseries_name})
     # Uses GET_DATE method to extract dates from datasets :
     temp_dates = SEARCH_DATE(x)
     # print given dates for choice of upper limit :
-    print(temp_dates)
+    print(cbind(temp_dates,temp_names))
     # Get clipboard entry for upper limit :
     date_recherche = as.Date(readline("Enter UPPER DATE LIMIT for selection (without \"\") : \n"))
     # Production of a mask for selection subset :
@@ -125,10 +127,11 @@ SEARCH_DATES_UNDER = function(x){
 }
 
 SEARCH_DATES_UPPER = function(x){
+    temp_names = lapply(x,function(x){x$data$dataseries_name})
     # Uses GET_DATE method to extract dates from datasets :
     temp_dates = SEARCH_DATE(x)
     # print given dates for choice of lesser limit :
-    print(temp_dates)
+    print(cbind(temp_dates,temp_names))
     # Get clipboard entry for lesser limit :
     date_recherche = as.Date(readline("Enter LOWER DATE LIMIT for selection (without \"\") : \n"))
     # Production of a mask for selection subset :
@@ -153,9 +156,8 @@ SEARCH_TAGS = function(res){
   # Keyboard entry the chosen TAG(s) :
   clef_recherche = readline("Enter TAG for selection : \n")
   # Produce a mask with tag criteria
-  mask = unlist(lapply(temp,
+  mask = unlist(lapply(res,
                        function(x){unlist(sum(get_tags_names(x)==clef_recherche))>=1}))
-  print(mask)
   # Apply the mask to results for sub-selection : 
   temp_selected = res[mask]
   # Return sub-selection
@@ -166,7 +168,7 @@ SEARCH_TAGS = function(res){
 ## AGGREGATE search tools
 
 ```{r SEARCH IN SELECTION,echo=TRUE}
-AGGREG_SEARCH = function(results_pool = NULL){
+AGGREG_SEARCH = function(results_pool = NULL, downloading = FALSE){
   if(is.null(results_pool)) {
     # Begin with pooling results on KEYWORD and ROW LIMIT if no arguments passed :
     temp = search_datasets(query = Keyword, rows = rows)
@@ -182,7 +184,8 @@ AGGREG_SEARCH = function(results_pool = NULL){
   # Cut LOWER TRANCH regarding date argument : 
   temp = SEARCH_DATES_UPPER(temp)
   
-  temp_IDs = lapply(temp,function(x){x$data$id})
+  temp_IDs = lapply(temp,
+                    function(x){x$data$id})
   ID = c()
   NAME = c()
   
@@ -193,18 +196,19 @@ AGGREG_SEARCH = function(results_pool = NULL){
     eval(parse(
       text = paste0("RESOURCES_dataset_", i, " = get_resources(temp_dataset)")
     ))
-    folder = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/TEST/",NAME[i])
-    eval(parse(
-      text = paste0("dir.create(folder)")
-    ))
-    eval(parse(
-      text = paste0(
-        "lapply(RESOURCES_dataset_",
-        i,
-        ",function(x){x$download(folder = folder)})"
-      )
-    ))
+    if(downloading == TRUE){
+      folder = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/TEST/",NAME[i])
+      eval(parse(
+        text = paste0("dir.create(folder)")
+      ))
+      eval(parse(
+        text = paste0(
+          "lapply(RESOURCES_dataset_",
+          i,
+          ",function(x){x$download(folder = folder)})"
+    )))}
   }
+  print(cat(paste(ID,NAME,sep = " -> "),sep = "\n"))
 }
 
 # temp%>%pluck(1)%>%get_resources()%>%pluck(2)%>%download_resource(folder = folder)
