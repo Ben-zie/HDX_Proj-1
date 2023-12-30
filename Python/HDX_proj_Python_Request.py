@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 import pandas as pd
+import os
 
 # Load package for REGULAR EXPRESSION management :
 # https://docs.python.org/3/library/re.html
@@ -134,19 +135,15 @@ def word_search(datasets_list, patern, field=None):
 # Here an example KEYWORD for the research. Project being humanirarian oriented, the example involves COD datasets
 # wich are crucial in any analysis.
 # (Caution : space-separated if multiple words)
-Keyword = "cod"
-Keyword_infielf = 'cod-ps'
-field = 'name'
+Keyword = "epidemic"
+Keyword_infielf = 'ebola'
+field = 'notes'
 rows=1000
 
 # Limit dates :
 start_date = '2015-11-15'
-end_date   = '2018-11-18'
-
-# COD :
-# x = results[results[['cod_level']].notnull().all(1)]
-
-# x.sort_values(by = ['cod_level','dataset_date'],ascending=False)
+end_date   = '2023-11-18'
+ascending = True
 
 # RESEARCH MODULE :
 
@@ -173,7 +170,6 @@ results = pd.DataFrame(datasets)
 #       'solr_additions', 'state', 'subnational', 'tags', 'title',
 #       'total_res_downloads', 'type', 'updated_by_script', 'url', 'version']
 
-# ,
 #                      start_date=start_date,
 #                      end_date=end_date,
 #                      ascending=ascending,
@@ -183,7 +179,7 @@ results = pd.DataFrame(datasets)
 # results.shape
 
 # 3.Run functions to apply time interval :
-res = select_by_date(results = results,start_date=start_date,end_date=end_date)
+res = select_by_date(results = results,start_date=start_date,end_date=end_date,ascending=ascending)
 
 # searching for a WORD as 'token' in a field :
 
@@ -196,19 +192,26 @@ res = select_by_date(results = results,start_date=start_date,end_date=end_date)
 # # Get the matching-dataset list :
 # results.loc[results.name.apply(lambda x : token in x),field]
 
-mask_word = word_search(res, patern =  'ocha' ,field = field)
+mask_word = word_search(res, patern = Keyword_infielf ,field = field)
 res = res.iloc[mask_word,:]
 #%%
 
 # READ MODULE :
-dataset = 
-# Read dataset and get ressources :
-dataset = Dataset.read_from_hdx("novel-coronavirus-2019-ncov-cases")
-resources = dataset.get_resources()
-for res in resources:
-    url, path = res.download("C:/Users/Benjamin/Documents/UN/HDX/POOL")
-    print(f"Resource URL {url} downloaded to {path}")
 
+
+    for i in range(1,len(res)) :
+        dataset_id = res.iloc[i].id
+        dataset_name = res.iloc[i].title.split()
+        # Read dataset and get ressources :
+        dataset = Dataset.read_from_hdx(dataset_id)
+        resources = dataset.get_resources()
+        for res in resources:
+            url, path = res.download("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/Resources")
+            print(f"Resource URL {url} downloaded to {path}")
+
+# Directory 
+directory = "GeeksforGeeks"
+#%%
 # Get infos on results :
 # Results to dataframe
 results = pd.DataFrame(dataset)
