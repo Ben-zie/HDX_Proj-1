@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import pandas as pd
 import os
+from datetime import datetime
 
 # Load package for REGULAR EXPRESSION management :
 # https://docs.python.org/3/library/re.html
@@ -16,6 +17,7 @@ from hdx.api.configuration import Configuration
 from hdx.data.dataset import Dataset
 
 # SETUP MODULE
+import HDX_proj_Python_Request
 
 # Setup configuration for HDX client :
 setup_logging()
@@ -42,7 +44,7 @@ def set_date (x):
     Returns : dates of different datasets in a vector object
     """
     # Import library
-    from datetime import datetime
+
     # Extract column from results dataset :
     x_dates = results.get('dataset_date')
     # Get the pattern of each dates (FROM / TO) :
@@ -56,7 +58,6 @@ def set_date (x):
     # Which we return :
     return x
 
-#%%
 # Set a function to add a variable to dataset, containing date and sort dataset by this column :
 def sort_by_date (x, ascending=True, inplace = False) :
     """
@@ -70,9 +71,7 @@ def sort_by_date (x, ascending=True, inplace = False) :
     x = x.sort_values(by='date_before_var', ascending = ascending, inplace = inplace)
     return x
 
-#%%
 # Aggregated time-searching functions :
-
 def select_by_date (results,
                     start_date,
                     end_date,
@@ -102,7 +101,6 @@ def select_by_date (results,
         y=None
     return y
 
-#%%
 # LEXICAL SERACH in fields :
 
 # SOURCE : online python course on KAGGLE plateform :
@@ -136,12 +134,12 @@ def word_search(datasets_list, patern, field=None):
 # wich are crucial in any analysis.
 # (Caution : space-separated if multiple words)
 Keyword = "epidemic"
-Keyword_infielf = 'ebola'
+Keyword_infielf = 'ocha'
 field = 'notes'
 rows=1000
 
 # Limit dates :
-start_date = '2015-11-15'
+start_date = '2001-11-15'
 end_date   = '2023-11-18'
 ascending = True
 
@@ -193,44 +191,24 @@ res = select_by_date(results = results,start_date=start_date,end_date=end_date,a
 # results.loc[results.name.apply(lambda x : token in x),field]
 
 mask_word = word_search(res, patern = Keyword_infielf ,field = field)
-res = res.iloc[mask_word,:]
+# res = res.iloc[mask_word,:]
 #%%
 
 # READ MODULE :
 
 
-    for i in range(1,len(res)) :
-        dataset_id = res.iloc[i].id
-        dataset_name = res.iloc[i].title.split()
-        # Read dataset and get ressources :
-        dataset = Dataset.read_from_hdx(dataset_id)
-        resources = dataset.get_resources()
-        for res in resources:
-            url, path = res.download("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/Resources")
-            print(f"Resource URL {url} downloaded to {path}")
+# for i in range(1,len(res)) :
+#     dataset_id = res.iloc[i].id
+#     print(dataset_id)
+#     path = os.path.join(parent_dir, dataset_id)
+#     os.mkdir(path) 
+#     # Read dataset and get ressources :
+#     dataset = Dataset.read_from_hdx(dataset_id)
+#     resources = dataset.get_resources()
+#     for res in resources:
+#         url, path = res.download(path)
+#         print(f"Resource URL {url} downloaded to {path}")
 
-# Directory 
-directory = "GeeksforGeeks"
-#%%
-# Get infos on results :
-# Results to dataframe
-results = pd.DataFrame(dataset)
-# See all "results" columns with dtypes :
-results.dtypes
-result.[....].describe()
-
-# TODO : reshape types and variables : 
-results["...."] = pd.Categorical(df["...."], ordered=....)
-# Check dtypes :
-# See all "results" columns with dtypes :
-results.dtypes
-
-# See all "results" columns :
-results.columns
-# See all "results" columns with dtypes :
-results.dtypes
-# Print specific field for all results (eg. "title")
-results.loc[:,"title"]
 
 
 
