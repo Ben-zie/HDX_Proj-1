@@ -153,17 +153,23 @@ SEARCH_DATES_UPPER = function(x){
 
 ```{r SEARCH BY TAGS, echo=TRUE}
 # Choose in results which medias to select for download :
-SEARCH_TAGS = function(res){
+SEARCH_TAGS = function(res) {
   # Summarize TAGs presents in results :
   # CAUTION : see how "lapply" pattern exposes results to common HDX-Function :
   print(unique(unlist(lapply(res,
-                       function(x){get_tags_names(x)}))))
-  # Keyboard entry the chosen TAG(s) :
+                             function(x) {
+                               get_tags_names(x)
+                             }))))
+  # Keyboard entry the chosen TAG(s) : multiple words search is supported by just using SPACE separator
   clef_recherche = readline("Enter TAG for selection (lower cap only) : \n")
+  clef_recherche = unlist(strsplit(clef_recherche, split = ' '))
   # Produce a mask with tag criteria
   mask = unlist(lapply(res,
-                       function(x){unlist(sum(stringr::str_to_lower(get_tags_names(x))==clef_recherche))>=1}))
-  # Apply the mask to results for sub-selection : 
+                       function(x) {
+                         unlist(sum(stringr::str_to_lower(get_tags_names(x)) == clef_recherche)) >=
+                           1
+                       }))
+  # Apply the mask to results for sub-selection :
   temp_selected = res[mask]
   # Return sub-selection
   return(temp_selected)
@@ -175,7 +181,7 @@ SEARCH_TAGS = function(res){
 ```{r SEARCH IN SELECTION,echo=TRUE}
 AGGREG_SEARCH = function(results_pool = NULL,
                          Keyword = NULL,
-                         Rows = Rows,
+                         Rows = 10,
                          downloading = FALSE,
                          log_file = FALSE) {
   
