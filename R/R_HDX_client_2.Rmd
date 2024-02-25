@@ -9,7 +9,7 @@ output:
 
 # CONFIGURATION
 
-This script installs from the *"configuration shunk"* the *"rhdx"* package. All interrogations of the HDX database relies on it. 
+The *"rhdx"* package is installed from the *"configuration shunk"*. Any request to the HDX database relies on it. 
 
 For more informations, see :    
 https://gitlab.com/dickoa/rhdx
@@ -22,7 +22,6 @@ knitr::opts_chunk$set(echo = TRUE)
 # Alternatively, install just dplyr:
 # install.packages("dplyr")
 # install.packages('anytime')
-
 
 # Install HDX package from Github :
 # install.packages("remotes")
@@ -40,11 +39,7 @@ library('anytime')
 
 ## HDX Config :
 
-Mendatory to configure RHDX package connexion with the HDX SERVER. 
-
-For informations on the package, see man-page on : 
-
-https://rdrr.io/github/dickoa/rhdx/man/
+The RHDX package connexion to the HDX SERVER must be configured : 
 
 ```{r conf, echo=TRUE}
 set_rhdx_config(
@@ -57,14 +52,19 @@ set_rhdx_config(
 )
 ```
 
-To verify configuration : 
+
+For informations on the package, see man-page on : 
+
+https://rdrr.io/github/dickoa/rhdx/man/
+
+To verify configuration, run : 
 
 ```{r , echo=TRUE}
 # Configuration check :
   get_rhdx_config()
 ```
 
-With result beeing : 
+With result : 
 * <HDX Configuration> 
    HDX site: prod
    HDX site url: https://data.humdata.org
@@ -72,19 +72,24 @@ With result beeing :
 
 ## SEARCH IN MAIN SERVER
 
-Simple (but evolutiv) search by *"key-word"*, specifying a *"limit"* for result-list. Below a "configuration panel" exposing variables :
+Search by *"key-word"*, specifying a *"limit"* for result-list. Below "configuration panel" exposes variables :
 
 ```{r SEARCH MODULE, message=FALSE, include=FALSE}
-# This shunck is a controle panel. Defin your variables :
+# Define here your variables :
+# KEYWORD
 Keyword = 'ebola'
+Num_rows = 20
 
-# Simple search with SEARCH_DATASETS function :
-temp = search_datasets(Keyword,rows = 20)
+# Request database with SEARCH_DATASETS function :
+temp = search_datasets(query = Keyword,
+                       rows = Num_rows)
 ```
 
 ## SEARCH IN RESULTS
 
-"*search_datasets*" function returns a list of HDX_datasets objects. Several criterias can then be used to select in this pool (eg. dates, tags, organisation...). Each criteria corresponds to HDX-package functions, simply exposed by a "*lapply*" structure. 
+"*search_datasets*" function returns a list of HDX_datasets objects. Several criterias can then select in this pool (eg. dates, tags, organisation...). 
+
+Each criteria corresponds to HDX-package functions, simply exposed by a "*lapply*" structure. 
 
 See HDX [Manual](https://rdrr.io/github/dickoa/rhdx/man/) for more. 
 
@@ -112,10 +117,12 @@ SEARCH_DATE <- function(selection){
 }
 
 SEARCH_DATES_UNDER = function(x){
+    temp_names = lapply(x,
+                      function(x){x$data$name})
     # Uses GET_DATE method to extract dates from datasets :
     temp_dates = SEARCH_DATE(x)
     # print given dates for choice of upper limit :
-    print(temp_dates)
+    print(cbind(unlist(temp_names),temp_dates))
     # Get clipboard entry for upper limit :
     date_recherche = as.Date(readline("Enter UPPER DATE LIMIT for selection (without \"\") : \n"))
     # Production of a mask for selection subset :
@@ -125,10 +132,11 @@ SEARCH_DATES_UNDER = function(x){
 }
 
 SEARCH_DATES_UPPER = function(x){
+    temp_names = lapply(x,function(x){x$data$dataseries_name})
     # Uses GET_DATE method to extract dates from datasets :
     temp_dates = SEARCH_DATE(x)
     # print given dates for choice of lesser limit :
-    print(temp_dates)
+    print(cbind(temp_dates,temp_names))
     # Get clipboard entry for lesser limit :
     date_recherche = as.Date(readline("Enter LOWER DATE LIMIT for selection (without \"\") : \n"))
     # Production of a mask for selection subset :
@@ -145,18 +153,23 @@ SEARCH_DATES_UPPER = function(x){
 
 ```{r SEARCH BY TAGS, echo=TRUE}
 # Choose in results which medias to select for download :
-SEARCH_TAGS = function(res){
+SEARCH_TAGS = function(res) {
   # Summarize TAGs presents in results :
   # CAUTION : see how "lapply" pattern exposes results to common HDX-Function :
   print(unique(unlist(lapply(res,
-                       function(x){get_tags_names(x)}))))
-  # Keyboard entry the chosen TAG(s) :
-  clef_recherche = readline("Enter TAG for selection : \n")
+                             function(x) {
+                               get_tags_names(x)
+                             }))))
+  # Keyboard entry the chosen TAG(s) : multiple words search is supported by just using SPACE separator
+  clef_recherche = readline("Enter TAG for selection (lower cap only) : \n")
+  clef_recherche = unlist(strsplit(clef_recherche, split = ' '))
   # Produce a mask with tag criteria
-  mask = unlist(lapply(temp,
-                       function(x){unlist(sum(get_tags_names(x)==clef_recherche))>=1}))
-  print(mask)
-  # Apply the mask to results for sub-selection : 
+  mask = unlist(lapply(res,
+                       function(x) {
+                         unlist(sum(stringr::str_to_lower(get_tags_names(x)) == clef_recherche)) >=
+                           1
+                       }))
+  # Apply the mask to results for sub-selection :
   temp_selected = res[mask]
   # Return sub-selection
   return(temp_selected)
@@ -166,26 +179,38 @@ SEARCH_TAGS = function(res){
 ## AGGREGATE search tools
 
 ```{r SEARCH IN SELECTION,echo=TRUE}
-AGGREG_SEARCH = function(results_pool = NULL){
+AGGREG_SEARCH = function(results_pool = NULL,
+                         Keyword = NULL,
+                         Rows = 10,
+                         downloading = FALSE,
+                         log_file = FALSE) {
+  
+  # GET RESULTS POOL :
+  # Either from new selection :
   if(is.null(results_pool)) {
     # Begin with pooling results on KEYWORD and ROW LIMIT if no arguments passed :
-    temp = search_datasets(query = Keyword, rows = rows)
+    temp = search_datasets(query = Keyword, rows = Rows)
   } else{
+  # Either from previous selection :
     temp = results_pool
   }
-  # Use GET_DATE method to extract dates from datasets :
-  temp_dates = SEARCH_DATE(temp)
   # Pick items by TAGs :
   temp = SEARCH_TAGS(temp)
-  # Cut UPPER TRANCH regarding date argument : 
+  # Cut UPPER-DATE TRANCH : 
   temp = SEARCH_DATES_UNDER(temp)
-  # Cut LOWER TRANCH regarding date argument : 
+  # Cut LOWER-DATE TRANCH : 
   temp = SEARCH_DATES_UPPER(temp)
+  # Use GET_DATE method to extract dates from datasets :
+  temp_dates = SEARCH_DATE(temp)
   
-  temp_IDs = lapply(temp,function(x){x$data$id})
+  # GET IDs FROM SELECTION :
+  # Get IDs :
+  temp_IDs = lapply(temp,
+                    function(x){x$data$id})
+  # Create lists to put IDs and NAMES :
   ID = c()
   NAME = c()
-  
+  # For each item, put it's ID and NAME in the lists and create a variable with it's resources :
   for(i in seq(1,length(temp_IDs))){
     ID = append(ID, temp_IDs[[i]])
     temp_dataset = pull_dataset(identifier = ID[i])
@@ -193,17 +218,29 @@ AGGREG_SEARCH = function(results_pool = NULL){
     eval(parse(
       text = paste0("RESOURCES_dataset_", i, " = get_resources(temp_dataset)")
     ))
-    folder = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/TEST/",NAME[i])
-    eval(parse(
-      text = paste0("dir.create(folder)")
-    ))
-    eval(parse(
-      text = paste0(
-        "lapply(RESOURCES_dataset_",
-        i,
-        ",function(x){x$download(folder = folder)})"
-      )
-    ))
+    # Then, if DOWNLOADING is asked in args to the function, get resources and store them in names folder :
+    if(downloading == TRUE){
+      # Create a PATH corresponding to the item NAME :
+      folder = paste0("C:/Users/Benjamin/Documents/GITHub/HDX_Proj-1/DATAs/TEST/",NAME[i])
+      # Create the FOLDER with this PATH :
+      eval(parse(
+        text = paste0("dir.create(folder)")
+      ))
+      # Download each in it's FOLDER :
+      eval(parse(
+        text = paste0(
+          "lapply(RESOURCES_dataset_",
+          i,
+          ",function(x){x$download(folder = folder)})"
+    )))}
+  }
+  # Print results to console :
+  print(cbind(temp_dates,NAME))
+  # Print results to LOG :
+  if(log_file == TRUE){
+    sink(file = paste0(path,"AGGREG_SEARCH_Log"))
+      print(cbind(temp_dates,NAME))
+    sink()
   }
 }
 
