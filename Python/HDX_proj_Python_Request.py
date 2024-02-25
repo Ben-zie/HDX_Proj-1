@@ -17,7 +17,7 @@ from hdx.api.configuration import Configuration
 from hdx.data.dataset import Dataset
 
 # SETUP MODULE
-import HDX_proj_Python_Request
+# import HDX_proj_Python_Request
 
 # Setup configuration for HDX client :
 setup_logging()
@@ -43,23 +43,23 @@ def set_date (x):
     Parameters : a dataframe containing research results from the HDX databse
     Returns : dates of different datasets in a vector object
     """
-    # Import library
 
     # Extract column from results dataset :
-    x_dates = results.get('dataset_date')
+    x_dates = x.get('dataset_date')
     # Get the pattern of each dates (FROM / TO) :
-        # TODO : verify compatibility with database regarding from positionning in singles
+        # TODO : verify compatibility of signle-columned lines with database
     x_dates = x_dates.str.findall(r'(\d{4}-\d{2}-\d{2})T')
     # 'Serialize' the two columns :
     x_dates = x_dates.apply(lambda x : pd.Series(x))
     # Insert it in the original dataset :
-    results['date_before_var'] = pd.to_datetime(x_dates[0],)
-    results['date_after_var']  = pd.to_datetime(x_dates[1],)
+    x['from_date'] = pd.to_datetime(x_dates[0],)
+    x['to_date']  = pd.to_datetime(x_dates[1],)
     # Which we return :
+    print("set_date done : see new columns \"from_date\" and \"to_date\"")
     return x
 
 # Set a function to add a variable to dataset, containing date and sort dataset by this column :
-def sort_by_date (x, ascending=True, inplace = False) :
+def sort_by_date (x, ascending=True, inplace = False, by = "from_date") :
     """
     Function : Sorts a dataset by dates. Mainly a filter for 'select_by_date' function.
     Parameters : a dataframe containing research results from the HDX databse
@@ -68,39 +68,40 @@ def sort_by_date (x, ascending=True, inplace = False) :
     # Call the 'set_date' function to have right columns to look in :
     x = set_date(x)
     # Use formated columns to sort dataset with :
-    x = x.sort_values(by='date_before_var', ascending = ascending, inplace = inplace)
+    x = x.sort_values(by=by, ascending = ascending, inplace = inplace)
     return x
 
-# Aggregated time-searching functions :
+# Aggregated time-searching function :
 def select_by_date (results,
                     start_date,
                     end_date,
                     ascending = False,
                     inplace = False) :
     # From the 'results' dataset, set and sort the dates in formated columns :
-    x = sort_by_date(results, ascending = ascending,inplace = inplace)
+    x = sort_by_date(results, ascending = ascending)
     # Cases for search FROM, TO or IN BETWEEN dates :
     if start_date != None and end_date != None :
         # Select DataFrame rows between two dates using DataFrame.isin()
-        y = x[x["date_after_var"].isin(pd.date_range(start_date, end_date))]
-        print('option 1 : find items in interval')
+        y = x[x["from_date"].isin(pd.date_range(start_date, end_date))]
+        print('option 1 : find items in interval [start ; from]')
         # Source : https://sparkbyexamples.com/pandas/pandas-select-dataframe-rows-between-two-dates/
     elif start_date != None :
         # Selecting lower to the limit-date :
         mask = (x['date_after_var'] > start_date)
         y = x[mask]
-        print('option 2 : find items upper the limit-date')
+        print('option 2 : find items upper to this date')
     elif end_date != None :
         # Selecting upper to the limit-date :
         mask = (x['date_after_var'] < end_date)
         y = x[mask]
-        print('option 3 : find items lower the limit-date')
+        print('option 3 : find items lower this to this-date')
     else : 
         # No limit-date to search for
         print('no limits pointed for selection')
         y=None
     return y
 
+#%%
 # LEXICAL SERACH in fields :
 
 # SOURCE : online python course on KAGGLE plateform :
@@ -112,16 +113,16 @@ def word_search(datasets_list, patern, field=None):
     """
     
     # list to hold the indices of matching documents
-    indices = [] 
-    datasets_list = datasets_list[field]
+    indices = []
+    datasets_list_field = datasets_list[field]
     # Iterate through the indices (i) and elements (doc) of documents
-    for i, dataset in enumerate(datasets_list):
+    for i, dataset in enumerate(datasets_list_field):
         # Split the string doc into a list of words (according to whitespace)
         tokens = dataset.split()
         # Make a transformed list where we 'normalize' each word to facilitate matching.
         # Periods and commas are removed from the end of each word, and it's set to all lowercase.
         normalized = [token.rstrip('.,').lower() for token in tokens]
-        # Is there a match? If so, update the list of matching indices.
+        # Is there a match ? If so, update the list of matching indices.
         if patern.lower() in normalized:
             indices.append(i)
     return indices
@@ -134,7 +135,7 @@ def word_search(datasets_list, patern, field=None):
 # wich are crucial in any analysis.
 # (Caution : space-separated if multiple words)
 Keyword = "epidemic"
-Keyword_infielf = 'ocha'
+Keyword_infielf = 'malaria'
 field = 'notes'
 rows=1000
 
@@ -194,7 +195,7 @@ mask_word = word_search(res, patern = Keyword_infielf ,field = field)
 # res = res.iloc[mask_word,:]
 #%%
 
-# READ MODULE :
+# READ MODULES :
 
 
 # for i in range(1,len(res)) :
